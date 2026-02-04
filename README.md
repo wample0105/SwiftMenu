@@ -1,7 +1,7 @@
 # RightMenu
 
 <p align="center">
-  <img src="ApoRightMenu/Assets.xcassets/AppIcon.appiconset/icon_512x512.png" alt="RightMenu Logo" width="120" height="120" />
+  <img src="Docs/logo.png" alt="RightMenu Logo" width="120" height="120" />
 </p>
 
 <p align="center">
