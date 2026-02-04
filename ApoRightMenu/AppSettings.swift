@@ -58,6 +58,12 @@ class AppSettings: ObservableObject {
         set { userDefaults?.set(newValue, forKey: "enableMoveToTrash"); objectWillChange.send() }
     }
     
+    // 开机启动开关
+    var launchAtLogin: Bool {
+        get { return userDefaults?.bool(forKey: "launchAtLogin") ?? false }
+        set { userDefaults?.set(newValue, forKey: "launchAtLogin"); objectWillChange.send() }
+    }
+    
     // 启用 Extension 开关
     var extensionEnabled: Bool {
         get { return userDefaults?.bool(forKey: "extensionEnabled") ?? true }

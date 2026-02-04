@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import ServiceManagement
 
 struct SettingsView: View {
     @StateObject private var settings = AppSettings.shared
@@ -19,7 +20,7 @@ struct SettingsView: View {
                     .foregroundColor(.blue)
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("ApoRightMenu")
+                    Text("RightMenu")
                         .font(.system(size: 24, weight: .bold))
                     Text("macOS 右键菜单增强工具")
                         .font(.caption)
@@ -74,10 +75,6 @@ struct SettingsView: View {
                             get: { settings.enableOpenInTerminal },
                             set: { settings.enableOpenInTerminal = $0 }
                         ))
-                        Toggle("移动到废纸篓", isOn: Binding(
-                            get: { settings.enableMoveToTrash },
-                            set: { settings.enableMoveToTrash = $0 }
-                        ))
                     }
                     
                     // Extension 控制
@@ -96,6 +93,22 @@ struct SettingsView: View {
                                 .foregroundColor(.red)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                    }
+                    
+                    // 开机启动
+                    settingsSection(title: "启动设置", icon: "power") {
+                        Toggle("开机自动启动", isOn: Binding(
+                            get: { settings.launchAtLogin },
+                            set: { newValue in
+                                settings.launchAtLogin = newValue
+                                setLaunchAtLogin(newValue)
+                            }
+                        ))
+                        
+                        Text("开启后，RightMenu 将在您登录 macOS 时自动运行")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .padding()
@@ -150,6 +163,27 @@ struct SettingsView: View {
         // 注意：需要在主应用中导入 FinderSync 框架
         // 这里暂时只是保存状态，实际激活需要用户在系统设置中操作
         print("Extension toggled to: \(enabled)")
+    }
+    
+    // 设置开机启动
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        if #available(macOS 13.0, *) {
+            // macOS 13+ 使用 SMAppService
+            do {
+                if enabled {
+                    try SMAppService.mainApp.register()
+                    print("✅ 开机启动已启用")
+                } else {
+                    try SMAppService.mainApp.unregister()
+                    print("✅ 开机启动已禁用")
+                }
+            } catch {
+                print("❌ 设置开机启动失败: \(error.localizedDescription)")
+            }
+        } else {
+            // macOS 12 及更早版本：引导用户手动添加或暂时忽略
+            print("⚠️ SMAppService 仅支持 macOS 13+")
+        }
     }
 }
 
