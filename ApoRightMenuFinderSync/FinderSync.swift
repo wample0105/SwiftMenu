@@ -111,30 +111,33 @@ class FinderSync: FIFinderSync {
 
             // 只有当有子菜单项时才添加主菜单
             if !newFileMenu.items.isEmpty {
-                let subMenuItem = menu.addItem(withTitle: "📄 新建...", action: nil, keyEquivalent: "")
+                let subMenuItem = NSMenuItem(title: "新建...", action: nil, keyEquivalent: "")
+                // 使用 SF Symbols 图标（macOS 原生风格）
+                if let icon = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "新建文件") {
+                    subMenuItem.image = icon
+                }
+                menu.addItem(subMenuItem)
                 menu.setSubmenu(newFileMenu, for: subMenuItem)
-            }
-            
-            // 分隔线
-            if !newFileMenu.items.isEmpty {
-                menu.addItem(NSMenuItem.separator())
             }
 
             // --- 2. 实用工具 ---
             if settings.enableCopyPath {
-                let item = menu.addItem(withTitle: "📋 复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
+                let item = menu.addItem(withTitle: "复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
+                if let icon = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "复制路径") {
+                    item.image = icon
+                }
                 item.target = self
             }
             
             if settings.enableOpenInTerminal {
-                let item = menu.addItem(withTitle: "💻 在终端打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                let item = menu.addItem(withTitle: "在终端打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                if let icon = NSImage(systemSymbolName: "terminal", accessibilityDescription: "在终端打开") {
+                    item.image = icon
+                }
                 item.target = self
             }
             
-            if settings.enableMoveToTrash {
-                let item = menu.addItem(withTitle: "🗑️ 移到废纸篓", action: #selector(moveToTrash(_:)), keyEquivalent: "")
-                item.target = self
-            }
+            // 移到废纸篓功能已移除（原生菜单已提供）
         }
         
         return menu
@@ -234,14 +237,6 @@ class FinderSync: FIFinderSync {
             try process.run()
         } catch {
             showDebugAlert(title: "无法打开终端", message: "错误：\(error.localizedDescription)")
-        }
-    }
-    
-    @objc func moveToTrash(_ sender: AnyObject?) {
-        guard let targets = FIFinderSyncController.default().selectedItemURLs() else { return }
-        
-        for url in targets {
-            try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
         }
     }
 }
