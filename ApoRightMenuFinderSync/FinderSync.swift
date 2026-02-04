@@ -10,31 +10,50 @@ class FinderSync: FIFinderSync {
 
     override init() {
         super.init()
-
+        
         // 🟢 修复 AppSettings 访问权限后，这里就能用了
         // 记得一定要在右侧把 Target Membership 勾选上！
-        let settings = AppSettings.shared
-        if !settings.extensionEnabled {
-             NSLog("Extension disabled by user settings")
-             return
-        }
+//        let settings = AppSettings.shared
+//        if !settings.extensionEnabled {
+//             return
+//        }
 
         // 🟢 现代写法：设置通过 Controller 监控的目录
         let finderSync = FIFinderSyncController.default()
         
-        // 监控 Documents 目录和 桌面
+        // 🟢 最终方案：监控 "用户主目录" 和 "Volumes"
+        // 这是实现 "类 Windows 全局菜单" 的唯一标准方式。
+        // 虽然 node_modules 文件多，但因为我们没有实现 "徽标 (Badge)" 逻辑，
+        // 仅仅是菜单项，性能消耗极低，理论上是不会崩溃的。
+        // 之前的崩溃大概率是 Xcode 调试产生的 "僵尸进程冲突"。
         var urls = Set<URL>()
-        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-             urls.insert(docs)
+        
+        // 获取真实的 /Users/用户名 目录
+        var realHomeDir = NSHomeDirectory()
+        if let pw = getpwuid(getuid()) {
+            realHomeDir = String(cString: pw.pointee.pw_dir)
         }
-        if let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first {
-             urls.insert(desktop)
-        }
+        let home = URL(fileURLWithPath: realHomeDir)
+        
+        urls.insert(home)
+        urls.insert(URL(fileURLWithPath: "/Volumes"))
         
         finderSync.directoryURLs = urls
-        
-        // 设置徽标通知（可选）
-        // finderSync.setBadgeImage(..., label: ..., forBadgeIdentifier: "myBadge")
+    }
+    class DebugLogger {
+        static func log(_ message: String) {
+            let logFile = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("ApoRightMenu_Debug.txt")
+            let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
+            let entry = "[\(timestamp)] \(message)\n"
+            
+            if let handle = try? FileHandle(forWritingTo: logFile) {
+                handle.seekToEndOfFile()
+                handle.write(entry.data(using: .utf8)!)
+                handle.closeFile()
+            } else {
+                try? entry.write(to: logFile, atomically: true, encoding: .utf8)
+            }
+        }
     }
 
     // MARK: - Menu and Toolbar Item Support
@@ -66,23 +85,28 @@ class FinderSync: FIFinderSync {
             
             if settings.enableNewTXT {
                 let item = newFileMenu.addItem(withTitle: "新建文本文档 (.txt)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 1 // Tag 1 = TXT
+                item.tag = 1
+                item.target = self
             }
             if settings.enableNewWord {
                 let item = newFileMenu.addItem(withTitle: "新建 Word 文档 (.docx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 2 // Tag 2 = Word
+                item.tag = 2
+                item.target = self
             }
             if settings.enableNewExcel {
                 let item = newFileMenu.addItem(withTitle: "新建 Excel 表格 (.xlsx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 3 // Tag 3 = Excel
+                item.tag = 3
+                item.target = self
             }
              if settings.enableNewPPT {
                 let item = newFileMenu.addItem(withTitle: "新建 PPT 演示文稿 (.pptx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 4 // Tag 4 = PPT
+                item.tag = 4
+                item.target = self
             }
              if settings.enableNewMarkdown {
                 let item = newFileMenu.addItem(withTitle: "新建 Markdown 文件 (.md)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 5 // Tag 5 = Markdown
+                item.tag = 5
+                item.target = self
             }
 
             // 只有当有子菜单项时才添加主菜单
@@ -98,15 +122,18 @@ class FinderSync: FIFinderSync {
 
             // --- 2. 实用工具 ---
             if settings.enableCopyPath {
-                menu.addItem(withTitle: "📋 复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
+                let item = menu.addItem(withTitle: "📋 复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
+                item.target = self
             }
             
             if settings.enableOpenInTerminal {
-                menu.addItem(withTitle: "💻 在终端打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                let item = menu.addItem(withTitle: "💻 在终端打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                item.target = self
             }
             
             if settings.enableMoveToTrash {
-                menu.addItem(withTitle: "🗑️ 移到废纸篓", action: #selector(moveToTrash(_:)), keyEquivalent: "")
+                let item = menu.addItem(withTitle: "🗑️ 移到废纸篓", action: #selector(moveToTrash(_:)), keyEquivalent: "")
+                item.target = self
             }
         }
         
@@ -115,8 +142,34 @@ class FinderSync: FIFinderSync {
     
     // MARK: - Actions
 
+    // MARK: - Actions
+
+    // 🟢 辅助方法：弹窗提示 (用于调试，生产环境可按需移除或保留为错误提示)
+    func showDebugAlert(title: String, message: String) {
+        DispatchQueue.main.async {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
+    }
+
     @objc func createNewFile(_ sender: NSMenuItem) {
-        guard let target = FIFinderSyncController.default().targetedURL() else { return }
+        guard let target = FIFinderSyncController.default().targetedURL() else {
+            showDebugAlert(title: "错误", message: "无法获取当前路径 (Targeted URL is nil)")
+            return
+        }
+        
+        // 智能判断：如果是文件，则获取其父目录
+        var targetFolder = target
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: target.path, isDirectory: &isDir) {
+            if !isDir.boolValue {
+                targetFolder = target.deletingLastPathComponent()
+            }
+        }
         
         var fileName = "新建文件"
         var ext = "txt"
@@ -130,21 +183,23 @@ class FinderSync: FIFinderSync {
         default: break
         }
         
-        // 简单的重名处理逻辑
-        var fileURL = target.appendingPathComponent("\(fileName).\(ext)")
+        // 重名处理
+        var fileURL = targetFolder.appendingPathComponent("\(fileName).\(ext)")
         var counter = 1
         while FileManager.default.fileExists(atPath: fileURL.path) {
-            fileURL = target.appendingPathComponent("\(fileName) \(counter).\(ext)")
+            fileURL = targetFolder.appendingPathComponent("\(fileName) \(counter).\(ext)")
             counter += 1
         }
         
-        // 创建空文件
-        let success = FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
-        
-        if success {
-            NSLog("File created at: \(fileURL.path)")
-        } else {
-            NSLog("Failed to create file")
+        // 尝试创建
+        do {
+             if !FileManager.default.createFile(atPath: fileURL.path, contents: Data(), attributes: nil) {
+                 // 再次尝试写入空字串
+                 try "".write(to: fileURL, atomically: true, encoding: .utf8)
+             }
+             // 成功: 不弹窗，保持静默体验
+        } catch {
+            showDebugAlert(title: "创建失败", message: "无法创建文件：\(error.localizedDescription)\n路径：\(fileURL.path)")
         }
     }
 
@@ -156,9 +211,30 @@ class FinderSync: FIFinderSync {
     }
 
     @objc func openInTerminal(_ sender: AnyObject?) {
-        guard let target = FIFinderSyncController.default().targetedURL() else { return }
+        guard let target = FIFinderSyncController.default().targetedURL() else {
+             showDebugAlert(title: "错误", message: "无法获取目标路径")
+             return
+        }
         
-        NSWorkspace.shared.open([target], withApplicationAt: URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app"), configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
+        var targetPath = target.path
+        // 如果是文件，获取父目录
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: targetPath, isDirectory: &isDir) {
+            if !isDir.boolValue {
+                targetPath = target.deletingLastPathComponent().path
+            }
+        }
+        
+        // 使用 Process 执行 open 命令（最接近原生实现，无需 AppleScript 权限）
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = ["-a", "Terminal", targetPath]
+        
+        do {
+            try process.run()
+        } catch {
+            showDebugAlert(title: "无法打开终端", message: "错误：\(error.localizedDescription)")
+        }
     }
     
     @objc func moveToTrash(_ sender: AnyObject?) {

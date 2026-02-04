@@ -112,6 +112,7 @@
 				196E7F712F3236BF00290CE7 /* Frameworks */,
 				196E7F722F3236BF00290CE7 /* Resources */,
 				196E7F982F32375700290CE7 /* Embed Foundation Extensions */,
+				196E7FA32F32FAC700290CE7 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -204,6 +205,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		196E7FA32F32FAC700290CE7 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# 清理旧进程，防止冲突\nkillall -9 ApoRightMenuFinderSync 2>/dev/null || true\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		196E7F702F3236BF00290CE7 /* Sources */ = {
