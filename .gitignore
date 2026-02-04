@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode
+build/
+DerivedData/
+*.
+!default.pbxuser
+*.
+!default.mode1v3
+*.
+!default.mode2v3
+*.
+!default.perspectivev3
+xcuserdata/
+
+# Xcode State
+*.xccheckout
+*.xcscheme
+*.xcuserstate
+
+# Project settings
+*.moved-aside
+*.
+*.hmap
+*.ipa
+*.pkg
+
+# Swift Package Manager
+.build/
+
+# Logs
+Logs/
+Test/
+
+# Other
+*~
+.directory
