@@ -12,157 +12,136 @@ struct SettingsView: View {
     @StateObject private var settings = AppSettings.shared
     
     var body: some View {
-        VStack(spacing: 20) {
-            // 标题栏
-            HStack {
-                Image(systemName: "doc.text")
-                    .font(.system(size: 32))
-                    .foregroundColor(.blue)
+        VStack(spacing: 0) {
+            // 🏷️ 顶部品牌区域
+            HStack(spacing: 16) {
+                if let appIcon = NSApp.applicationIconImage {
+                    Image(nsImage: appIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 48, height: 48)
+                } else {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.blue)
+                }
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("RightMenu")
-                        .font(.system(size: 24, weight: .bold))
-                    Text("macOS 右键菜单增强工具")
-                        .font(.caption)
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text("让 Mac 拥有更高效的右键菜单")
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
-                // 开发者信息
-                Text("阿坡")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Version 1.0.0")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.secondary)
+                    Text("© 2026 阿坡")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
             }
-            .padding()
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
             .background(Color(NSColor.controlBackgroundColor))
             
             Divider()
             
-            ScrollView {
-                VStack(spacing: 20) {
-                    // 新建文件菜单
-                    settingsSection(title: "新建文件菜单", icon: "doc.badge.plus") {
-                        Toggle("新建 TXT 文档", isOn: Binding(
-                            get: { settings.enableNewTXT },
-                            set: { settings.enableNewTXT = $0 }
-                        ))
-                        Toggle("新建 Word 文档", isOn: Binding(
-                            get: { settings.enableNewWord },
-                            set: { settings.enableNewWord = $0 }
-                        ))
-                        Toggle("新建 Excel 表格", isOn: Binding(
-                            get: { settings.enableNewExcel },
-                            set: { settings.enableNewExcel = $0 }
-                        ))
-                        Toggle("新建 PPT 演示文稿", isOn: Binding(
-                            get: { settings.enableNewPPT },
-                            set: { settings.enableNewPPT = $0 }
-                        ))
-                        Toggle("新建 Markdown 文件", isOn: Binding(
-                            get: { settings.enableNewMarkdown },
-                            set: { settings.enableNewMarkdown = $0 }
-                        ))
-                    }
+            // 🎛️ 核心设置区域
+            VStack(spacing: 24) {
+                // 1. 新建文件组
+                HStack(alignment: .top, spacing: 16) {
+                    sectionLabel(title: "新建菜单", icon: "doc.badge.plus")
+                        .frame(width: 100, alignment: .leading)
                     
-                    // 文件操作菜单
-                    settingsSection(title: "文件操作", icon: "doc.text") {
-                        Toggle("复制文件路径", isOn: Binding(
-                            get: { settings.enableCopyPath },
-                            set: { settings.enableCopyPath = $0 }
-                        ))
-                        Toggle("在终端中打开", isOn: Binding(
-                            get: { settings.enableOpenInTerminal },
-                            set: { settings.enableOpenInTerminal = $0 }
-                        ))
-                    }
-                    
-                    // Extension 控制
-                    settingsSection(title: "Finder 扩展", icon: "square.grid.3x3") {
-                        Toggle("启用 Finder 扩展", isOn: Binding(
-                            get: { settings.extensionEnabled },
-                            set: { newValue in
-                                settings.extensionEnabled = newValue
-                                toggleExtension(newValue)
-                            }
-                        ))
-                        
-                        if !settings.extensionEnabled {
-                            Text("Finder 扩展已禁用，右键菜单将不会显示")
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 24) {
+                            checkbox("TXT 文档", isOn: $settings.enableNewTXT)
+                            checkbox("PPT 演示", isOn: $settings.enableNewPPT)
+                        }
+                        HStack(spacing: 24) {
+                            checkbox("Word 文档", isOn: $settings.enableNewWord)
+                            checkbox("Markdown", isOn: $settings.enableNewMarkdown)
+                        }
+                        HStack(spacing: 24) {
+                            checkbox("Excel 表格", isOn: $settings.enableNewExcel)
+                            Spacer()
                         }
                     }
                     
-                    // 开机启动
-                    settingsSection(title: "启动设置", icon: "power") {
-                        Toggle("开机自动启动", isOn: Binding(
-                            get: { settings.launchAtLogin },
-                            set: { newValue in
-                                settings.launchAtLogin = newValue
-                                setLaunchAtLogin(newValue)
-                            }
-                        ))
-                        
-                        Text("开启后，RightMenu 将在您登录 macOS 时自动运行")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    Spacer()
                 }
-                .padding()
+                
+                Divider().opacity(0.5)
+                
+                // 2. 文件操作组
+                HStack(alignment: .top, spacing: 16) {
+                    sectionLabel(title: "文件操作", icon: "folder.badge.gear")
+                        .frame(width: 100, alignment: .leading)
+                    
+                    HStack(spacing: 24) {
+                        checkbox("复制路径", isOn: $settings.enableCopyPath)
+                        checkbox("终端打开", isOn: $settings.enableOpenInTerminal)
+                    }
+                    
+                    Spacer()
+                }
+                
+                Divider().opacity(0.5)
+                
+                // 3. 系统集成组 - 只保留开机自启
+                HStack(alignment: .top, spacing: 16) {
+                    sectionLabel(title: "系统集成", icon: "gearshape.2")
+                        .frame(width: 100, alignment: .leading)
+                    
+                    Toggle(isOn: Binding(
+                        get: { settings.launchAtLogin },
+                        set: { settings.launchAtLogin = $0; setLaunchAtLogin($0) }
+                    )) {
+                        Text("开机自启")
+                            .font(.system(size: 13))
+                    }
+                    .toggleStyle(.checkbox)
+                    .help("开启后，RightMenu 将在登录 macOS 时自动运行")
+                    
+                    Spacer()
+                }
             }
+            .padding(24)
             
-            Divider()
-            
-            // 底部信息
-            HStack {
-                Text("版本 1.0.0")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text("© 2026 阿坡")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding()
+            Spacer()
         }
-        .frame(minWidth: 600, minHeight: 500)
+        .frame(width: 500, height: 380) // 🔒 黄金比例紧凑尺寸
         .background(Color(NSColor.windowBackgroundColor))
     }
     
-    // 设置区块组件
-    private func settingsSection<Content: View>(
-        title: String,
-        icon: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .foregroundColor(.blue)
-                    .font(.system(size: 16))
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                content()
-            }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
-            .background(Color(NSColor.controlBackgroundColor))
-            .cornerRadius(8)
+    // ✨ 辅助视图组件
+    
+    private func sectionLabel(title: String, icon: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(.blue)
+                .frame(width: 20)
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary)
         }
+        .frame(width: 110, alignment: .leading) // 固定左侧标签宽度，实现完美对齐
     }
     
-    // 启用/停用 Finder Extension
-    private func toggleExtension(_ enabled: Bool) {
-        // 注意：需要在主应用中导入 FinderSync 框架
-        // 这里暂时只是保存状态，实际激活需要用户在系统设置中操作
-        print("Extension toggled to: \(enabled)")
+    private func checkbox(_ title: String, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            Text(title)
+                .font(.system(size: 13))
+        }
+        .toggleStyle(.checkbox)
+        .frame(width: 100, alignment: .leading) // 固定选项宽度，实现网格感
     }
     
     // 设置开机启动

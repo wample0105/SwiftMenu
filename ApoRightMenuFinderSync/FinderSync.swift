@@ -11,24 +11,16 @@ class FinderSync: FIFinderSync {
     override init() {
         super.init()
         
-        // 🟢 修复 AppSettings 访问权限后，这里就能用了
-        // 记得一定要在右侧把 Target Membership 勾选上！
-//        let settings = AppSettings.shared
-//        if !settings.extensionEnabled {
-//             return
-//        }
-
-        // 🟢 现代写法：设置通过 Controller 监控的目录
+        // 始终启用扩展，监控用户主目录和外部卷
+        setupDirectoryMonitoring()
+    }
+    
+    private func setupDirectoryMonitoring() {
         let finderSync = FIFinderSyncController.default()
         
-        // 🟢 最终方案：监控 "用户主目录" 和 "Volumes"
-        // 这是实现 "类 Windows 全局菜单" 的唯一标准方式。
-        // 虽然 node_modules 文件多，但因为我们没有实现 "徽标 (Badge)" 逻辑，
-        // 仅仅是菜单项，性能消耗极低，理论上是不会崩溃的。
-        // 之前的崩溃大概率是 Xcode 调试产生的 "僵尸进程冲突"。
         var urls = Set<URL>()
         
-        // 获取真实的 /Users/用户名 目录
+        // 获取真实的用户主目录
         var realHomeDir = NSHomeDirectory()
         if let pw = getpwuid(getuid()) {
             realHomeDir = String(cString: pw.pointee.pw_dir)
@@ -39,6 +31,7 @@ class FinderSync: FIFinderSync {
         urls.insert(URL(fileURLWithPath: "/Volumes"))
         
         finderSync.directoryURLs = urls
+        print("✅ FinderSync: 扩展已启用，监控目录：\(urls)")
     }
     class DebugLogger {
         static func log(_ message: String) {

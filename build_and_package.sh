@@ -69,14 +69,15 @@ echo ""
 
 # 5. 复制文档
 echo "📝 步骤 5/6: 复制文档..."
-cp /Users/wample/coding/me/ApoRightMenu/使用说明.md "$RELEASE_DIR/"
-cp /Users/wample/coding/me/ApoRightMenu/快速开始.md "$RELEASE_DIR/"
-echo "✅ 文档已复制"
+cp /Users/wample/coding/me/ApoRightMenu/README.md "$RELEASE_DIR/"
+cp /Users/wample/coding/me/ApoRightMenu/README_EN.md "$RELEASE_DIR/"
+cp -R /Users/wample/coding/me/ApoRightMenu/Docs "$RELEASE_DIR/"
+echo "✅ 文档与 Docs 目录已复制"
 echo ""
 
 # 6. 创建 ZIP 完整包
 echo "🗜️  步骤 6/6: 创建 ZIP 压缩包..."
-zip -r RightMenu_v1.0.zip RightMenu_Installer.dmg 使用说明.md 快速开始.md > /dev/null 2>&1
+zip -r RightMenu_v1.0.zip RightMenu_Installer.dmg README.md README_EN.md Docs > /dev/null 2>&1
 echo "✅ ZIP 创建成功"
 echo ""
 
@@ -87,7 +88,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "📦 输出位置：$RELEASE_DIR"
 echo ""
-ls -lh "$RELEASE_DIR" | grep -E "(dmg|zip|md)"
+ls -lh "$RELEASE_DIR" | grep -E "(dmg|zip|README)"
 echo ""
 echo "🚀 可以分发以下文件："
 echo "   • RightMenu_Installer.dmg (专业安装包)"
