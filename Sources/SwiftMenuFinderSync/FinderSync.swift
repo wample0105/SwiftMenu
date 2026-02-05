@@ -7,12 +7,44 @@ class FinderSync: FIFinderSync {
         let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
         return URL(fileURLWithPath: paths.first!)
     }()
+    
+    // 用于保持扩展活跃的 activity token
+    private var activityToken: NSObjectProtocol?
 
     override init() {
         super.init()
         
         // 始终启用扩展，监控用户主目录和外部卷
         setupDirectoryMonitoring()
+        
+        // 🔥 关键：禁用自动终止，保持扩展常驻
+        setupKeepAlive()
+    }
+    
+    /// 设置保持活跃机制，防止系统自动终止扩展
+    private func setupKeepAlive() {
+        // 1. 禁用自动终止（最关键的一步）
+        ProcessInfo.processInfo.disableAutomaticTermination("SwiftMenu Finder Extension Active")
+        
+        // 2. 开始一个后台活动，告诉系统这个进程需要保持运行
+        activityToken = ProcessInfo.processInfo.beginActivity(
+            options: [.background, .idleSystemSleepDisabled],
+            reason: "SwiftMenu Finder Extension - Monitoring directories"
+        )
+        
+        // 3. 禁止突然终止
+        ProcessInfo.processInfo.disableSuddenTermination()
+        
+        print("✅ FinderSync: 已启用保持活跃机制")
+    }
+    
+    deinit {
+        // 清理：结束活动并恢复自动终止
+        if let token = activityToken {
+            ProcessInfo.processInfo.endActivity(token)
+        }
+        ProcessInfo.processInfo.enableAutomaticTermination("SwiftMenu Finder Extension Active")
+        ProcessInfo.processInfo.enableSuddenTermination()
     }
     
     private func setupDirectoryMonitoring() {
