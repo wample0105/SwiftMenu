@@ -69,10 +69,11 @@ echo ""
 
 # 5. 复制文档
 echo "📝 步骤 5/6: 复制文档..."
-cp /Users/wample/coding/me/ApoRightMenu/README.md "$RELEASE_DIR/"
-cp /Users/wample/coding/me/ApoRightMenu/README_EN.md "$RELEASE_DIR/"
-cp -R /Users/wample/coding/me/ApoRightMenu/Docs "$RELEASE_DIR/"
-echo "✅ 文档与 Docs 目录已复制"
+cp "/Users/wample/coding/me/ApoRightMenu/README.md" "$RELEASE_DIR/"
+cp "/Users/wample/coding/me/ApoRightMenu/README_EN.md" "$RELEASE_DIR/"
+mkdir -p "$RELEASE_DIR/Docs"
+cp /Users/wample/coding/me/ApoRightMenu/Docs/*.png "$RELEASE_DIR/Docs/" 2>/dev/null || true
+echo "✅ 说明文档与资源已复制"
 echo ""
 
 # 6. 创建 ZIP 完整包
