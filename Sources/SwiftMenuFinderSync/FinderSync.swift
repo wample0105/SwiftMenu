@@ -102,6 +102,14 @@ class FinderSync: FIFinderSync {
         // 检查设置（需要先修复 Target Membership）
         let settings = AppSettings.shared
         
+        // 获取当前选中的文件
+        let selectedItems = FIFinderSyncController.default().selectedItemURLs() ?? []
+        let hasSelectedFiles = !selectedItems.isEmpty
+        
+        // 检查剪贴板是否有文件
+        let pasteboard = NSPasteboard.general
+        let clipboardHasFiles = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.isEmpty == false
+        
         // 如果是在文件上右键
         if menuKind == .contextualMenuForContainer || menuKind == .contextualMenuForItems {
             
@@ -166,9 +174,10 @@ class FinderSync: FIFinderSync {
                         }
                         item.target = self
                     }
-                    
-               case "cut":
-                    if settings.enableCut {
+                                   case "cut":
+                    // Windows风格：只有选中文件时才显示剪切
+                    // 必须是在项目上右键 (.contextualMenuForItems)
+                    if settings.enableCut && hasSelectedFiles && menuKind == .contextualMenuForItems {
                         let item = menu.addItem(withTitle: "剪切", action: #selector(cutFiles(_:)), keyEquivalent: "")
                         if let icon = NSImage(systemSymbolName: "scissors", accessibilityDescription: "剪切") {
                             item.image = icon
@@ -177,7 +186,9 @@ class FinderSync: FIFinderSync {
                     }
                     
                 case "copy":
-                    if settings.enableCopy {
+                    // Windows风格：只有选中文件时才显示复制
+                    // 必须是在项目上右键 (.contextualMenuForItems)
+                    if settings.enableCopy && hasSelectedFiles && menuKind == .contextualMenuForItems {
                         let item = menu.addItem(withTitle: "复制", action: #selector(copyFiles(_:)), keyEquivalent: "")
                         if let icon = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "复制") {
                             item.image = icon
@@ -186,17 +197,13 @@ class FinderSync: FIFinderSync {
                     }
                     
                 case "paste":
-                    if settings.enablePaste {
+                    // Windows风格：只有剪贴板有文件时才显示粘贴
+                    if settings.enablePaste && clipboardHasFiles {
                         let item = menu.addItem(withTitle: "粘贴", action: #selector(pasteFiles(_:)), keyEquivalent: "")
                         if let icon = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: "粘贴") {
                             item.image = icon
                         }
                         item.target = self
-                        
-                        // 检查剪贴板是否有文件URL，如果没有则禁用粘贴
-                        let pasteboard = NSPasteboard.general
-                        let hasFiles = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.isEmpty == false
-                        item.isEnabled = hasFiles
                     }
                     
                 default:
@@ -353,9 +360,12 @@ class FinderSync: FIFinderSync {
         for url in urls {
             var destinationURL = targetFolder.appendingPathComponent(url.lastPathComponent)
             
-            // 检查目标文件是否已存在
-            if fileManager.fileExists(atPath: destinationURL.path) {
-                // 如果用户还没做过选择，弹出对话框
+            // 🛑 关键修复：检查源路径是否等于目标路径（原地复制）
+            if url.path == destinationURL.path {
+                // 如果是原地复制，强制重命名（生成副本），不询问替换（否则会删除源文件）
+                destinationURL = generateUniqueURL(for: destinationURL)
+            } else if fileManager.fileExists(atPath: destinationURL.path) {
+                // 目标存在且不是源文件本身：正常的冲突处理
                 if conflictChoice == nil {
                     let semaphore = DispatchSemaphore(value: 0)
                     var userChoice: Int = 1 // 默认跳过
@@ -388,6 +398,7 @@ class FinderSync: FIFinderSync {
                 // 根据用户选择处理
                 switch conflictChoice {
                 case 0: // 替换
+                    // 删除目标文件（注意：前面已经排除了源=目标的情况）
                     try? fileManager.removeItem(at: destinationURL)
                     
                 case 1: // 跳过
@@ -432,6 +443,8 @@ class FinderSync: FIFinderSync {
         var counter = 1
         var newURL = url
         
+        // 修改重命名逻辑：如果是 "xxx copy.txt" 这种风格
+        // 这里简单使用 "xxx 1.txt", "xxx 2.txt"
         while fileManager.fileExists(atPath: newURL.path) {
             let newFilename = ext.isEmpty ? "\(filename) \(counter)" : "\(filename) \(counter).\(ext)"
             newURL = directory.appendingPathComponent(newFilename)
@@ -440,4 +453,6 @@ class FinderSync: FIFinderSync {
         
         return newURL
     }
+    
+
 }
