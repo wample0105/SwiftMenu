@@ -71,8 +71,6 @@
 > 3. 在弹出的安全确认框中再次点击 **“打开”** 即可。
 
 ### 1. 下载与安装
-
-### 1. 下载与安装
 1. 前往 [Releases](https://github.com/wample0105/SwiftMenu/releases) 下载最新的 `SwiftMenu_Installer.dmg`。
 2. 打开 DMG，将 `SwiftMenu.app` 拖入 **应用程序 (Applications)** 文件夹。
 3. **关键：** 首次运行请**右键点击**应用图标并选择“打开”，在安全提示中再次点击“打开”。

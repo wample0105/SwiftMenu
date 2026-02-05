@@ -71,8 +71,6 @@ Before installing SwiftMenu, please ensure your device meets the following requi
 > 3. Click **"Open"** again in the confirmation dialog.
 
 ### 1. Download & Install
-
-### 1. Download & Install
 1. Go to [Releases](https://github.com/wample0105/SwiftMenu/releases) and download the latest `SwiftMenu_Installer.dmg`.
 2. Open the DMG and drag `SwiftMenu.app` into your **Applications** folder.
 3. **Critical:** For the first run, **Right-click** the app icon and choose "Open", then click "Open" again in the security prompt.
