@@ -1,7 +1,7 @@
-# RightMenu
+# SwiftMenu
 
 <p align="center">
-  <img src="Docs/logo.png" alt="RightMenu Logo" width="120" height="120" />
+  <img src="Docs/logo.png" alt="SwiftMenu Logo" width="120" height="120" />
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ---
 
-**RightMenu** 是一款原生且轻量级的 macOS Finder 扩展工具，它将 Windows 用户习惯的右键新建文件、复制路径等功能完美带到了 macOS。无需复杂配置，安装即可显著提升您的文件管理效率。
+**SwiftMenu** 是一款原生且轻量级的 macOS Finder 扩展工具，它将 Windows 用户习惯的右键新建文件、复制路径等功能完美带到了 macOS。无需复杂配置，安装即可显著提升您的文件管理效率。
 
 ## ✨ 核心功能
 
@@ -61,17 +61,17 @@
 ## 📥 安装指南
 
 ### 1. 下载程序
-前往 [Releases](https://github.com/your_username/RightMenu/releases) 页面，下载最新的 `RightMenu_v1.0.zip` 或 `.dmg` 安装包。
+前往 [Releases](https://github.com/your_username/SwiftMenu/releases) 页面，下载最新的 `SwiftMenu_v1.0.zip` 或 `.dmg` 安装包。
 
 ### 2. 安装与运行
-1. 将 `RightMenu.app` 拖入 **应用程序 (Applications)** 文件夹。
+1. 将 `SwiftMenu.app` 拖入 **应用程序 (Applications)** 文件夹。
 2. **首次启动**：右击图标后选择“打开”，在安全提示中再次点击“打开”。
 
 ### 3. 启用 Finder 扩展
 1. 打开 **系统设置**。
 2. 导航至 **隐私与安全性** -> **扩展**。
 3. 进入 **Finder 扩展**。
-4. 勾选 **RightMenu**。
+4. 勾选 **SwiftMenu**。
 
 > **提示**：如果菜单没有立即显示，请右键点击 Dock 上的 Finder 图标并选择“重新启动”，或者在终端执行 `killall Finder`。
 
@@ -85,7 +85,7 @@
 ### 从源码构建
 1. 克隆仓库：
    ```bash
-   git clone https://github.com/your_username/RightMenu.git
+   git clone https://github.com/your_username/SwiftMenu.git
    ```
 2. 在 Xcode 中打开 `ApoRightMenu.xcodeproj`。
 3. 在 **Signing & Capabilities** 中选择您的开发团队。

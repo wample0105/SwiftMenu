@@ -1,7 +1,7 @@
-# RightMenu
+# SwiftMenu
 
 <p align="center">
-  <img src="Docs/logo.png" alt="RightMenu Logo" width="120" height="120" />
+  <img src="Docs/logo.png" alt="SwiftMenu Logo" width="120" height="120" />
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ---
 
-**RightMenu** is a lightweight, native macOS Finder Sync Extension that brings the convenient right-click menu usage (common in Windows) to macOS. It allows you to quickly create new files, copy paths, and open terminals directly from the Finder context menu without any complex setup.
+**SwiftMenu** is a lightweight, native macOS Finder Sync Extension that brings the convenient right-click menu usage (common in Windows) to macOS. It allows you to quickly create new files, copy paths, and open terminals directly from the Finder context menu without any complex setup.
 
 ## ✨ Features
 
@@ -61,17 +61,17 @@
 ## 📥 Installation
 
 ### 1. Download App
-Go to the [Releases](https://github.com/your_username/RightMenu/releases) page and download the latest version.
+Go to the [Releases](https://github.com/your_username/SwiftMenu/releases) page and download the latest version.
 
 ### 2. Installation
-1. Drag `RightMenu.app` to your **Applications** folder.
+1. Drag `SwiftMenu.app` to your **Applications** folder.
 2. **First Run**: Right-click the icon and choose "Open", then click "Open" again in the security alert.
 
 ### 3. Enable Extension
 1. Open **System Settings**.
 2. Go to **Privacy & Security** -> **Extensions**.
 3. Select **Finder Extensions**.
-4. Check the box next to **RightMenu**.
+4. Check the box next to **SwiftMenu**.
 
 > **Pro Tip**: If the menu doesn't appear, right-click the Finder icon on Dock and select "Relaunch", or execute `killall Finder` in terminal.
 
@@ -85,7 +85,7 @@ Go to the [Releases](https://github.com/your_username/RightMenu/releases) page a
 ### Build from Source
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your_username/RightMenu.git
+   git clone https://github.com/your_username/SwiftMenu.git
    ```
 2. Open `ApoRightMenu.xcodeproj` in Xcode.
 3. Select your development team in **Signing & Capabilities**.

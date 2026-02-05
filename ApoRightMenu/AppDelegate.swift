@@ -13,7 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
-        print("🚀 RightMenu: applicationDidFinishLaunching")
+        print("🚀 SwiftMenu: applicationDidFinishLaunching")
         
         // 改为常规模式：同时显示在菜单栏和程序坞
         NSApp.setActivationPolicy(.regular)
@@ -26,7 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setupStatusBar() {
-        print("🎨 RightMenu: Setting up status bar...")
+        print("🎨 SwiftMenu: Setting up status bar...")
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         
         if let button = statusItem?.button {
@@ -34,7 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let compositeIcon = createCompositeIcon()
             compositeIcon.isTemplate = true
             button.image = compositeIcon
-            print("✅ RightMenu: 菜单栏组合图标已设置")
+            print("✅ SwiftMenu: 菜单栏组合图标已设置")
         }
         
         // 创建菜单
@@ -46,7 +46,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         menu.addItem(NSMenuItem.separator())
         
-        let aboutItem = NSMenuItem(title: "关于 RightMenu", action: #selector(showAbout), keyEquivalent: "")
+        let aboutItem = NSMenuItem(title: "关于 SwiftMenu", action: #selector(showAbout), keyEquivalent: "")
         aboutItem.target = self
         menu.addItem(aboutItem)
         
@@ -95,7 +95,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
         newWindow.center()
-        newWindow.title = "RightMenu"
+        newWindow.title = "SwiftMenu"
         newWindow.titleVisibility = .hidden
         newWindow.titlebarAppearsTransparent = true
         

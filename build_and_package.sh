@@ -29,7 +29,7 @@ echo ""
 
 # 3. 准备发布目录
 echo "📁 步骤 3/6: 准备发布目录..."
-RELEASE_DIR=~/Desktop/RightMenu_Release
+RELEASE_DIR=~/Desktop/SwiftMenu_Release
 rm -rf "$RELEASE_DIR"
 mkdir -p "$RELEASE_DIR/dmg_temp"
 
@@ -37,9 +37,9 @@ mkdir -p "$RELEASE_DIR/dmg_temp"
 BUILD_APP="/Users/wample/Library/Developer/Xcode/DerivedData/ApoRightMenu-hcckofkepsibenfupxagqpkfhanh/Build/Products/Release/ApoRightMenu.app"
 if [ -d "$BUILD_APP" ]; then
     cp -R "$BUILD_APP" "$RELEASE_DIR/dmg_temp/"
-    # 重命名为 RightMenu.app
-    mv "$RELEASE_DIR/dmg_temp/ApoRightMenu.app" "$RELEASE_DIR/dmg_temp/RightMenu.app"
-    echo "✅ App 已复制并重命名为 RightMenu.app"
+    # 重命名为 SwiftMenu.app
+    mv "$RELEASE_DIR/dmg_temp/ApoRightMenu.app" "$RELEASE_DIR/dmg_temp/SwiftMenu.app"
+    echo "✅ App 已复制并重命名为 SwiftMenu.app"
 else
     echo "❌ 找不到编译后的 App：$BUILD_APP"
     exit 1
@@ -52,11 +52,11 @@ echo ""
 # 4. 创建 DMG
 echo "💿 步骤 4/6: 创建 DMG 安装包..."
 cd "$RELEASE_DIR"
-hdiutil create -volname "RightMenu" \
+hdiutil create -volname "SwiftMenu" \
     -srcfolder dmg_temp \
     -ov -format UDZO \
     -fs HFS+ \
-    RightMenu_Installer.dmg > /dev/null 2>&1
+    SwiftMenu_Installer.dmg > /dev/null 2>&1
     
 if [ $? -eq 0 ]; then
     echo "✅ DMG 创建成功"
@@ -77,7 +77,7 @@ echo ""
 
 # 6. 创建 ZIP 完整包
 echo "🗜️  步骤 6/6: 创建 ZIP 压缩包..."
-zip -r RightMenu_v1.0.zip RightMenu_Installer.dmg README.md README_EN.md Docs > /dev/null 2>&1
+zip -r SwiftMenu_v1.0.zip SwiftMenu_Installer.dmg README.md README_EN.md Docs > /dev/null 2>&1
 echo "✅ ZIP 创建成功"
 echo ""
 
@@ -91,8 +91,8 @@ echo ""
 ls -lh "$RELEASE_DIR" | grep -E "(dmg|zip|README)"
 echo ""
 echo "🚀 可以分发以下文件："
-echo "   • RightMenu_Installer.dmg (专业安装包)"
-echo "   • RightMenu_v1.0.zip (完整压缩包)"
+echo "   • SwiftMenu_Installer.dmg (专业安装包)"
+echo "   • SwiftMenu_v1.0.zip (完整压缩包)"
 echo ""
 echo "💡 提示：双击 DMG 测试安装效果"
 echo ""

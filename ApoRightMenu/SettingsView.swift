@@ -27,7 +27,7 @@ struct SettingsView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("RightMenu")
+                    Text("SwiftMenu")
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(.primary)
                     Text("让 Mac 拥有更高效的右键菜单")
@@ -107,7 +107,7 @@ struct SettingsView: View {
                             .font(.system(size: 13))
                     }
                     .toggleStyle(.checkbox)
-                    .help("开启后，RightMenu 将在登录 macOS 时自动运行")
+                    .help("开启后，SwiftMenu 将在登录 macOS 时自动运行")
                     
                     Spacer()
                 }
