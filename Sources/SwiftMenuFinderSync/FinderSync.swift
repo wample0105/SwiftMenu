@@ -160,6 +160,11 @@ class FinderSync: FIFinderSync {
                             item.image = icon
                         }
                         item.target = self
+                        
+                        // 检查剪贴板是否有文件URL，如果没有则禁用粘贴
+                        let pasteboard = NSPasteboard.general
+                        let hasFiles = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.isEmpty == false
+                        item.isEnabled = hasFiles
                     }
                     
                 default:
