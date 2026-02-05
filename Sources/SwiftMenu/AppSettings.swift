@@ -1,6 +1,6 @@
 //
 //  AppSettings.swift
-//  ApoRightMenu
+//  SwiftMenu
 //
 //  Created by 阿坡 on 2026/02/03.
 //

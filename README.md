@@ -79,8 +79,8 @@
 ## 🛠 开发与构建
 
 1. 克隆仓库：`git clone https://github.com/wample0105/SwiftMenu.git`
-2. 使用 Xcode 打开 `ApoRightMenu.xcodeproj`。
-3. 构建并运行 `ApoRightMenu` Scheme。
+2. 使用 Xcode 打开 `SwiftMenu.xcodeproj`。
+3. 构建并运行 `SwiftMenu` Scheme。
 
 ---
 <p align="center">

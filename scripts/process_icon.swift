@@ -2,7 +2,7 @@ import AppKit
 import CoreGraphics
 
 // 配置路径
-let projectPath = "/Users/wample/coding/me/ApoRightMenu/Sources/SwiftMenu"
+let projectPath = "/Users/wample/coding/me/SwiftMenu/Sources/SwiftMenu"
 let inputPath = "\(projectPath)/Assets.xcassets/AppIcon.appiconset/icon_512x512.png"
 let outputDir = "\(projectPath)/Assets.xcassets/StatusBarIcon.imageset"
 let outputPath1x = "\(outputDir)/statusbar_icon.png"

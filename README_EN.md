@@ -79,8 +79,8 @@
 ## 🛠 Development & Build
 
 1. Clone the repo: `git clone https://github.com/wample0105/SwiftMenu.git`
-2. Open `ApoRightMenu.xcodeproj` in Xcode.
-3. Build and run the `ApoRightMenu` scheme.
+2. Open `SwiftMenu.xcodeproj` in Xcode.
+3. Build and run the `SwiftMenu` scheme.
 
 ---
 <p align="center">

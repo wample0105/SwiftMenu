@@ -19,7 +19,7 @@ echo ""
 
 # 2. 编译 Release 版本
 echo "🔨 步骤 2/6: 编译 Release 版本 (这可能需要1-2分钟)..."
-xcodebuild -scheme SwiftMenu -configuration Release build > /tmp/xcode_build.log 2>&1
+xcodebuild -scheme SwiftMenu -configuration Release -allowProvisioningUpdates build > /tmp/xcode_build.log 2>&1
 if [ $? -eq 0 ]; then
     echo "✅ 编译成功"
 else
