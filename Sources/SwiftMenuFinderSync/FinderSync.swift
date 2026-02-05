@@ -311,9 +311,60 @@ class FinderSync: FIFinderSync {
         
         // 执行复制或移动
         let fileManager = FileManager.default
+        var conflictChoice: Int? = nil // 记住用户的选择：0=替换, 1=跳过, 2=保留两者
+        
         for url in urls {
-            let destinationURL = targetFolder.appendingPathComponent(url.lastPathComponent)
+            var destinationURL = targetFolder.appendingPathComponent(url.lastPathComponent)
             
+            // 检查目标文件是否已存在
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                // 如果用户还没做过选择，弹出对话框
+                if conflictChoice == nil {
+                    let semaphore = DispatchSemaphore(value: 0)
+                    var userChoice: Int = 1 // 默认跳过
+                    
+                    DispatchQueue.main.async {
+                        // 激活应用以将弹窗显示在最前面
+                        NSApp.activate(ignoringOtherApps: true)
+                        
+                        let alert = NSAlert()
+                        alert.messageText = "文件已存在"
+                        alert.informativeText = "「\(url.lastPathComponent)」已存在于目标位置。您想如何处理？"
+                        alert.addButton(withTitle: "替换")
+                        alert.addButton(withTitle: "跳过")
+                        alert.addButton(withTitle: "保留两者")
+                        alert.alertStyle = .warning
+                        
+                        // 设置窗口层级为浮动窗口，确保显示在所有窗口之上（包括全屏Finder）
+                        alert.window.level = .floating
+                        
+                        let response = alert.runModal()
+                        userChoice = response.rawValue - 1000
+                        semaphore.signal()
+                    }
+                    
+                    // 等待用户响应
+                    semaphore.wait()
+                    conflictChoice = userChoice
+                }
+                
+                // 根据用户选择处理
+                switch conflictChoice {
+                case 0: // 替换
+                    try? fileManager.removeItem(at: destinationURL)
+                    
+                case 1: // 跳过
+                    continue
+                    
+                case 2: // 保留两者（重命名）
+                    destinationURL = generateUniqueURL(for: destinationURL)
+                    
+                default:
+                    continue
+                }
+            }
+            
+            // 执行实际的复制或移动操作
             do {
                 if isCut {
                     try fileManager.moveItem(at: url, to: destinationURL)
@@ -321,8 +372,10 @@ class FinderSync: FIFinderSync {
                     try fileManager.copyItem(at: url, to: destinationURL)
                 }
             } catch {
-                showDebugAlert(title: isCut ? "移动失败" : "复制失败", 
-                             message: "无法\(isCut ? "移动" : "复制")\(url.lastPathComponent): \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.showDebugAlert(title: isCut ? "移动失败" : "复制失败", 
+                                 message: "无法\(isCut ? "移动" : "复制")\(url.lastPathComponent): \(error.localizedDescription)")
+                }
             }
         }
         
@@ -330,5 +383,24 @@ class FinderSync: FIFinderSync {
         if isCut {
             pasteboard.clearContents()
         }
+    }
+    
+    // 生成不重名的文件URL（添加数字后缀）
+    private func generateUniqueURL(for url: URL) -> URL {
+        let fileManager = FileManager.default
+        let directory = url.deletingLastPathComponent()
+        let filename = url.deletingPathExtension().lastPathComponent
+        let ext = url.pathExtension
+        
+        var counter = 1
+        var newURL = url
+        
+        while fileManager.fileExists(atPath: newURL.path) {
+            let newFilename = ext.isEmpty ? "\(filename) \(counter)" : "\(filename) \(counter).\(ext)"
+            newURL = directory.appendingPathComponent(newFilename)
+            counter += 1
+        }
+        
+        return newURL
     }
 }
