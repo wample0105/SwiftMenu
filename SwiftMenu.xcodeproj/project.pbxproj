@@ -39,21 +39,10 @@
 		196E7F8C2F32375700290CE7 /* SwiftMenuFinderSync.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SwiftMenuFinderSync.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		196E7FA22F32446400290CE7 /* Exceptions for "SwiftMenu" folder in "SwiftMenuFinderSync" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				AppSettings.swift,
-			);
-			target = 196E7F8B2F32375700290CE7 /* SwiftMenuFinderSync */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		196E7F762F3236BF00290CE7 /* SwiftMenu */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				196E7FA22F32446400290CE7 /* Exceptions for "SwiftMenu" folder in "SwiftMenuFinderSync" target */,
 			);
 			path = Sources/SwiftMenu;
 			sourceTree = "<group>";
