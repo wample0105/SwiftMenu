@@ -118,8 +118,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+
     @objc func showAbout() {
-        NSApp.orderFrontStandardAboutPanel(nil)
+        // 先激活应用，确保关于窗口能即时弹到最前
+        NSApp.activate(ignoringOtherApps: true)
+        
+        let credits = NSMutableAttributedString(string: "Design & Code by ", attributes: [
+            .font: NSFont.systemFont(ofSize: 11),
+            .foregroundColor: NSColor.labelColor
+        ])
+        
+        let authorLink = NSAttributedString(string: "阿坡", attributes: [
+            .font: NSFont.systemFont(ofSize: 11),
+            .link: URL(string: "https://github.com/wample0105")!,
+            .foregroundColor: NSColor.linkColor
+        ])
+        
+        credits.append(authorLink)
+        credits.append(NSAttributedString(string: "\n\n", attributes: [.font: NSFont.systemFont(ofSize: 11)]))
+        
+        let link = NSAttributedString(string: "https://github.com/wample0105/SwiftMenu", attributes: [
+            .font: NSFont.systemFont(ofSize: 11),
+            .link: URL(string: "https://github.com/wample0105/SwiftMenu")!,
+            .foregroundColor: NSColor.linkColor
+        ])
+        
+        credits.append(link)
+
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .credits: credits,
+            .applicationVersion: "1.1.0"
+        ])
     }
 
     @objc func terminateApp() {

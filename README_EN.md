@@ -44,7 +44,31 @@
   </tr>
 </table>
 
+## 💻 System Requirements
+
+Before installing SwiftMenu, please ensure your device meets the following requirements:
+
+| Item | Minimum Requirement |
+|------|---------------------|
+| **Operating System** | macOS 12.0 (Monterey) or later |
+| **Chip** | Apple Silicon (M1/M2/M3/M4) or Intel processor |
+
+> 💡 **Tip**: If you're running macOS Sequoia 15.x or later, SwiftMenu is fully compatible.
+
 ## 🚀 Installation Guide
+
+> ⚠️ **IMPORTANT: If "App cannot be opened"**
+>
+> If you encounter a **"File is damaged"** or **"Cannot be opened"** error on first launch, this is standard macOS security behavior for open-source apps.
+>
+> <img src="assets/notice.png" alt="App Cannot Open Error" width="400" />
+>
+> **💡 The Solution (One-time only):**
+> 1. **Right-click** the SwiftMenu icon.
+> 2. Select **"Open"** from the context menu.
+> 3. Click **"Open"** again in the confirmation dialog.
+
+### 1. Download & Install
 
 ### 1. Download & Install
 1. Go to [Releases](https://github.com/wample0105/SwiftMenu/releases) and download the latest `SwiftMenu_Installer.dmg`.

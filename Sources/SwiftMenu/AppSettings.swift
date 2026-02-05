@@ -58,6 +58,24 @@ class AppSettings: ObservableObject {
         set { userDefaults?.set(newValue, forKey: "enableMoveToTrash"); objectWillChange.send() }
     }
     
+    // 剪切开关
+    var enableCut: Bool {
+        get { return userDefaults?.bool(forKey: "enableCut") ?? true }
+        set { userDefaults?.set(newValue, forKey: "enableCut"); objectWillChange.send() }
+    }
+    
+    // 复制开关
+    var enableCopy: Bool {
+        get { return userDefaults?.bool(forKey: "enableCopy") ?? true }
+        set { userDefaults?.set(newValue, forKey: "enableCopy"); objectWillChange.send() }
+    }
+    
+    // 粘贴开关
+    var enablePaste: Bool {
+        get { return userDefaults?.bool(forKey: "enablePaste") ?? true }
+        set { userDefaults?.set(newValue, forKey: "enablePaste"); objectWillChange.send() }
+    }
+    
     // 开机启动开关
     var launchAtLogin: Bool {
         get { return userDefaults?.bool(forKey: "launchAtLogin") ?? false }
@@ -68,5 +86,21 @@ class AppSettings: ObservableObject {
     var extensionEnabled: Bool {
         get { return userDefaults?.bool(forKey: "extensionEnabled") ?? true }
         set { userDefaults?.set(newValue, forKey: "extensionEnabled"); objectWillChange.send() }
+    }
+    
+    // 菜单项顺序
+    @Published var menuOrder: [String] {
+        didSet {
+            userDefaults?.set(menuOrder, forKey: "menuOrder")
+        }
+    }
+    
+    private init() {
+        if let savedOrder = userDefaults?.array(forKey: "menuOrder") as? [String], !savedOrder.isEmpty {
+            self.menuOrder = savedOrder
+        } else {
+            // 默认顺序：新建文件、复制、剪切、粘贴、复制路径、在终端打开
+            self.menuOrder = ["newFile", "copy", "cut", "paste", "copyPath", "openInTerminal"]
+        }
     }
 }

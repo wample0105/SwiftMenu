@@ -73,61 +73,98 @@ class FinderSync: FIFinderSync {
         // 如果是在文件上右键
         if menuKind == .contextualMenuForContainer || menuKind == .contextualMenuForItems {
             
-            // --- 1. 新建文件子菜单 ---
-            let newFileMenu = NSMenu(title: "新建文件")
-            
-            if settings.enableNewTXT {
-                let item = newFileMenu.addItem(withTitle: "新建文本文档 (.txt)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 1
-                item.target = self
-            }
-            if settings.enableNewWord {
-                let item = newFileMenu.addItem(withTitle: "新建 Word 文档 (.docx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 2
-                item.target = self
-            }
-            if settings.enableNewExcel {
-                let item = newFileMenu.addItem(withTitle: "新建 Excel 表格 (.xlsx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 3
-                item.target = self
-            }
-             if settings.enableNewPPT {
-                let item = newFileMenu.addItem(withTitle: "新建 PPT 演示文稿 (.pptx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 4
-                item.target = self
-            }
-             if settings.enableNewMarkdown {
-                let item = newFileMenu.addItem(withTitle: "新建 Markdown 文件 (.md)", action: #selector(createNewFile(_:)), keyEquivalent: "")
-                item.tag = 5
-                item.target = self
-            }
+            // 根据用户自定义顺序添加菜单项
+            for key in settings.menuOrder {
+                switch key {
+                case "newFile":
+                    // 新建文件子菜单
+                    let newFileMenu = NSMenu(title: "新建文件")
+                    
+                    if settings.enableNewTXT {
+                        let item = newFileMenu.addItem(withTitle: "新建文本文档 (.txt)", action: #selector(createNewFile(_:)), keyEquivalent: "")
+                        item.tag = 1
+                        item.target = self
+                    }
+                    if settings.enableNewWord {
+                        let item = newFileMenu.addItem(withTitle: "新建 Word 文档 (.docx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
+                        item.tag = 2
+                        item.target = self
+                    }
+                    if settings.enableNewExcel {
+                        let item = newFileMenu.addItem(withTitle: "新建 Excel 表格 (.xlsx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
+                        item.tag = 3
+                        item.target = self
+                    }
+                    if settings.enableNewPPT {
+                        let item = newFileMenu.addItem(withTitle: "新建 PPT 演示文稿 (.pptx)", action: #selector(createNewFile(_:)), keyEquivalent: "")
+                        item.tag = 4
+                        item.target = self
+                    }
+                    if settings.enableNewMarkdown {
+                        let item = newFileMenu.addItem(withTitle: "新建 Markdown 文件 (.md)", action: #selector(createNewFile(_:)), keyEquivalent: "")
+                        item.tag = 5
+                        item.target = self
+                    }
 
-            // 只有当有子菜单项时才添加主菜单
-            if !newFileMenu.items.isEmpty {
-                let subMenuItem = NSMenuItem(title: "新建...", action: nil, keyEquivalent: "")
-                // 使用 SF Symbols 图标（macOS 原生风格）
-                if let icon = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "新建文件") {
-                    subMenuItem.image = icon
+                    // 只有当有子菜单项时才添加主菜单
+                    if !newFileMenu.items.isEmpty {
+                        let subMenuItem = NSMenuItem(title: "新建...", action: nil, keyEquivalent: "")
+                        // 使用 SF Symbols 图标（macOS 原生风格）
+                        if let icon = NSImage(systemSymbolName: "doc.badge.plus", accessibilityDescription: "新建文件") {
+                            subMenuItem.image = icon
+                        }
+                        menu.addItem(subMenuItem)
+                        menu.setSubmenu(newFileMenu, for: subMenuItem)
+                    }
+                    
+                case "copyPath":
+                    if settings.enableCopyPath {
+                        let item = menu.addItem(withTitle: "复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
+                        if let icon = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "复制路径") {
+                            item.image = icon
+                        }
+                        item.target = self
+                    }
+                    
+                case "openInTerminal":
+                    if settings.enableOpenInTerminal {
+                        let item = menu.addItem(withTitle: "在终端打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
+                        if let icon = NSImage(systemSymbolName: "terminal", accessibilityDescription: "在终端打开") {
+                            item.image = icon
+                        }
+                        item.target = self
+                    }
+                    
+               case "cut":
+                    if settings.enableCut {
+                        let item = menu.addItem(withTitle: "剪切", action: #selector(cutFiles(_:)), keyEquivalent: "")
+                        if let icon = NSImage(systemSymbolName: "scissors", accessibilityDescription: "剪切") {
+                            item.image = icon
+                        }
+                        item.target = self
+                    }
+                    
+                case "copy":
+                    if settings.enableCopy {
+                        let item = menu.addItem(withTitle: "复制", action: #selector(copyFiles(_:)), keyEquivalent: "")
+                        if let icon = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "复制") {
+                            item.image = icon
+                        }
+                        item.target = self
+                    }
+                    
+                case "paste":
+                    if settings.enablePaste {
+                        let item = menu.addItem(withTitle: "粘贴", action: #selector(pasteFiles(_:)), keyEquivalent: "")
+                        if let icon = NSImage(systemSymbolName: "doc.on.clipboard.fill", accessibilityDescription: "粘贴") {
+                            item.image = icon
+                        }
+                        item.target = self
+                    }
+                    
+                default:
+                    break
                 }
-                menu.addItem(subMenuItem)
-                menu.setSubmenu(newFileMenu, for: subMenuItem)
-            }
-
-            // --- 2. 实用工具 ---
-            if settings.enableCopyPath {
-                let item = menu.addItem(withTitle: "复制路径", action: #selector(copyPath(_:)), keyEquivalent: "")
-                if let icon = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: "复制路径") {
-                    item.image = icon
-                }
-                item.target = self
-            }
-            
-            if settings.enableOpenInTerminal {
-                let item = menu.addItem(withTitle: "在终端打开", action: #selector(openInTerminal(_:)), keyEquivalent: "")
-                if let icon = NSImage(systemSymbolName: "terminal", accessibilityDescription: "在终端打开") {
-                    item.image = icon
-                }
-                item.target = self
             }
             
             // 移到废纸篓功能已移除（原生菜单已提供）
@@ -230,6 +267,68 @@ class FinderSync: FIFinderSync {
             try process.run()
         } catch {
             showDebugAlert(title: "无法打开终端", message: "错误：\(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - Cut/Copy/Paste Actions
+    
+    @objc func cutFiles(_ sender: AnyObject?) {
+        guard let urls = FIFinderSyncController.default().selectedItemURLs(), !urls.isEmpty else { return }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects(urls as [NSURL])
+        
+        // 设置剪切标记（使用 macOS 原生的剪切标记）
+        pasteboard.setData(Data([1]), forType: NSPasteboard.PasteboardType("com.apple.finder.node.cut"))
+    }
+    
+    @objc func copyFiles(_ sender: AnyObject?) {
+        guard let urls = FIFinderSyncController.default().selectedItemURLs(), !urls.isEmpty else { return }
+        
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.writeObjects(urls as [NSURL])
+    }
+    
+    @objc func pasteFiles(_ sender: AnyObject?) {
+        guard let targetURL = FIFinderSyncController.default().targetedURL() else { return }
+        
+        let pasteboard = NSPasteboard.general
+        guard let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty else { return }
+        
+        // 检查是否是剪切操作
+        let isCut = pasteboard.data(forType: NSPasteboard.PasteboardType("com.apple.finder.node.cut")) != nil
+        
+        // 确定目标文件夹
+        var targetFolder = targetURL
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir) {
+            if !isDir.boolValue {
+                targetFolder = targetURL.deletingLastPathComponent()
+            }
+        }
+        
+        // 执行复制或移动
+        let fileManager = FileManager.default
+        for url in urls {
+            let destinationURL = targetFolder.appendingPathComponent(url.lastPathComponent)
+            
+            do {
+                if isCut {
+                    try fileManager.moveItem(at: url, to: destinationURL)
+                } else {
+                    try fileManager.copyItem(at: url, to: destinationURL)
+                }
+            } catch {
+                showDebugAlert(title: isCut ? "移动失败" : "复制失败", 
+                             message: "无法\(isCut ? "移动" : "复制")\(url.lastPathComponent): \(error.localizedDescription)")
+            }
+        }
+        
+        // 剪切完成后清除剪切标记
+        if isCut {
+            pasteboard.clearContents()
         }
     }
 }

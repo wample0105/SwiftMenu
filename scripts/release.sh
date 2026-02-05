@@ -29,7 +29,17 @@ fi
 echo "🚀 开始发布流程：$VERSION"
 echo ""
 
-# 2. 调用构建脚本进行打包
+# 2. 获取发布日志
+echo "📝 请输入发布日志 (输入完成后按 Ctrl+D 结束，直接按 Ctrl+D 使用默认日志):"
+RELEASE_NOTES=$(cat)
+
+if [[ -z "$RELEASE_NOTES" ]]; then
+    RELEASE_NOTES="SwiftMenu $VERSION 发布。包含安装包和完整压缩包。"
+    echo "💡 使用默认日志"
+fi
+echo ""
+
+# 3. 调用构建脚本进行打包
 echo "📦 正在构建应用..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 "$SCRIPT_DIR/build_and_package.sh"
@@ -48,7 +58,7 @@ if [ ! -f "$DMG_FILE" ] || [ ! -f "$REAL_ZIP_FILE" ]; then
     exit 1
 fi
 
-# 3. 创建 Git Tag 并推送到远程
+# 4. 创建 Git Tag 并推送到远程
 echo "🏷️  创建 Git Tag: $VERSION"
 # 检查 tag 是否已存在
 if git rev-parse "$VERSION" >/dev/null 2>&1; then
@@ -58,14 +68,14 @@ else
     git push origin "$VERSION"
 fi
 
-# 4. 创建 GitHub Release 并上传文件
+# 5. 创建 GitHub Release 并上传文件
 echo "☁️  正在上传到 GitHub Release..."
 
 gh release create "$VERSION" \
     "$DMG_FILE" \
     "$REAL_ZIP_FILE" \
     --title "SwiftMenu $VERSION" \
-    --notes "SwiftMenu $VERSION 发布。包含安装包和完整压缩包。" \
+    --notes "$RELEASE_NOTES" \
     --repo wample0105/SwiftMenu
 
 echo ""
