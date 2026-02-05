@@ -35,7 +35,7 @@ class FinderSync: FIFinderSync {
     }
     class DebugLogger {
         static func log(_ message: String) {
-            let logFile = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("ApoRightMenu_Debug.txt")
+            let logFile = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("SwiftMenu_Debug.txt")
             let timestamp = DateFormatter.localizedString(from: Date(), dateStyle: .short, timeStyle: .medium)
             let entry = "[\(timestamp)] \(message)\n"
             
@@ -52,11 +52,11 @@ class FinderSync: FIFinderSync {
     // MARK: - Menu and Toolbar Item Support
 
     override var toolbarItemName: String {
-        return "ApoRightMenu"
+        return "SwiftMenu"
     }
 
     override var toolbarItemToolTip: String {
-        return "ApoRightMenu Finder Extension"
+        return "SwiftMenu Finder Extension"
     }
 
     override var toolbarItemImage: NSImage {

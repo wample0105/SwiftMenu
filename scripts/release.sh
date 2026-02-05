@@ -31,7 +31,8 @@ echo ""
 
 # 2. 调用构建脚本进行打包
 echo "📦 正在构建应用..."
-./build_and_package.sh
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+"$SCRIPT_DIR/build_and_package.sh"
 
 # 检查构建产物
 RELEASE_DIR=~/Desktop/SwiftMenu_Release

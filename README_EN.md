@@ -1,7 +1,7 @@
 # SwiftMenu
 
 <p align="center">
-  <img src="Docs/logo.png" alt="SwiftMenu Logo" width="120" height="120" />
+  <img src="assets/logo.png" alt="SwiftMenu Logo" width="120" height="120" />
 </p>
 
 <p align="center">
@@ -39,8 +39,8 @@
     <td align="center"><b>Custom Settings Center</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="Docs/screenshot_menu.png" alt="Menu Screenshot" width="300" /></td>
-    <td align="center"><img src="Docs/screenshot_settings.png" alt="Settings Screenshot" width="300" /></td>
+    <td align="center"><img src="assets/screenshot_menu.png" alt="Menu Screenshot" width="300" /></td>
+    <td align="center"><img src="assets/screenshot_settings.png" alt="Settings Screenshot" width="300" /></td>
   </tr>
 </table>
 

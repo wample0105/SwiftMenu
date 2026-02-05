@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct ApoRightMenuApp: App {
+struct SwiftMenuApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self)
     var appDelegate
 
