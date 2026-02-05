@@ -37,10 +37,12 @@
   <tr>
     <td align="center"><b>Enhanced Context Menu</b></td>
     <td align="center"><b>Custom Settings Center</b></td>
+    <td align="center"><b>Custom Menu Order</b></td>
   </tr>
   <tr>
     <td align="center"><img src="assets/screenshot_menu.png" alt="Menu Screenshot" width="300" /></td>
     <td align="center"><img src="assets/screenshot_settings.png" alt="Settings Screenshot" width="300" /></td>
+    <td align="center"><img src="assets/screenshot_menu_sort.png" alt="Menu Screenshot" width="300" /></td>
   </tr>
 </table>
 
