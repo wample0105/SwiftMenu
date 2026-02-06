@@ -37,23 +37,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ProcessInfo.processInfo.disableSuddenTermination()
     }
     
-    /// 启动 Extension 健康监控
+    // 进程监听源
+    private var processSource: DispatchSourceProcess?
+    
+    /// 启动 Extension 健康监控 (实时响应版)
     private func startExtensionHealthMonitor() {
-        // 每 5 分钟检查一次 Extension 状态
-        extensionHealthTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            self?.checkExtensionHealth()
-        }
+        // 1. 立即尝试建立实时监听
+        setupProcessMonitor()
         
-        // 立即检查一次
-        checkExtensionHealth()
+        // 2. 保留一个低频轮询作为双保险（比如每30秒），防止监听失效或初次启动未找到进程
+        extensionHealthTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            self?.ensureExtensionAlive()
+        }
     }
     
-    /// 检查 Extension 是否正常运行
-    private func checkExtensionHealth() {
-        // 使用 pluginkit 检查 Extension 是否启用
+    /// 设置进程监听（Unix Signal 级别，毫秒级响应）
+    private func setupProcessMonitor() {
+        // 取消旧的监听
+        processSource?.cancel()
+        processSource = nil
+        
+        // 获取进程 PID
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
-        task.arguments = ["-m", "-p", "com.apple.FinderSync"]
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        task.arguments = ["-x", "SwiftMenuFinderSync"]
         
         let pipe = Pipe()
         task.standardOutput = pipe
@@ -63,35 +70,73 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             task.waitUntilExit()
             
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8) {
-                // 检查我们的 Extension 是否在列表中且已启用（前面有 +）
-                let isEnabled = output.contains("+ ") && output.contains("com.aporightmenu")
+            if let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               let pid = Int32(output) {
                 
-                if isEnabled {
-                    print("✅ Extension 健康检查：正常运行")
-                } else {
-                    print("⚠️ Extension 健康检查：未启用或未运行")
-                    // 尝试触发 Extension 重新加载
-                    triggerExtensionReload()
+                print("✅ Watchdog: 锁定目标进程 PID=[\(pid)]，开始监听...")
+                
+                // 创建进程监听源
+                let source = DispatchSource.makeProcessSource(identifier: pid_t(pid), eventMask: .exit, queue: .main)
+                
+                source.setEventHandler { [weak self] in
+                    print("⚠️ Watchdog: 收到进程退出信号 (PID \(pid))，立即复活！")
+                    self?.reviveExtension()
+                    
+                    // 进程已死，监听失效，需要稍后重新建立对新进程的监听
+                    // 延迟 2 秒等待新进程启动
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        self?.setupProcessMonitor()
+                    }
                 }
+                
+                source.resume()
+                self.processSource = source
             }
         } catch {
-            print("❌ Extension 健康检查失败: \(error)")
+            // 暂时找不到进程，可能还没启动，交给轮询器稍后处理
         }
     }
     
-    /// 触发 Extension 重新加载
-    private func triggerExtensionReload() {
-        // 方法1：刷新 Finder Sync Controller 目录
-        // 这会触发系统重新加载 Extension
-        let finderSync = FIFinderSyncController.default()
-        let currentDirs = finderSync.directoryURLs
-        finderSync.directoryURLs = Set<URL>()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            finderSync.directoryURLs = currentDirs
-            print("🔄 已触发 Extension 重新加载")
+    /// 确保扩展存活（轮询用）
+    private func ensureExtensionAlive() {
+        // 如果当前正在监听中，通常不需要通过轮询来复活，
+        // 除非监听失效了或者进程刚死还没来得及重启
+        if processSource == nil || processSource?.isCancelled == true {
+             // 检查进程是否存在，不存在则复活
+            checkAndRevive()
         }
+        
+        // 始终尝试重新挂载监听（如果之前失败了）
+        if processSource == nil {
+            setupProcessMonitor()
+        }
+    }
+    
+    private func checkAndRevive() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
+        task.arguments = ["-x", "SwiftMenuFinderSync"]
+        try? task.run()
+        task.waitUntilExit()
+        
+        if task.terminationStatus != 0 {
+            print("🕒 Watchdog (轮询): 发现扩展未运行，正在复活...")
+            reviveExtension()
+            // 复活后稍等片刻建立监听
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.setupProcessMonitor()
+            }
+        }
+    }
+    
+    /// 复活扩展
+    private func reviveExtension() {
+        let extensionID = "com.aporightmenu.SwiftMenu.finder"
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+        task.arguments = ["-e", "use", "-i", extensionID]
+        try? task.run()
+        task.waitUntilExit()
     }
 
     private func setupStatusBar() {
