@@ -15,6 +15,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Extension 健康检查定时器
     private var extensionHealthTimer: Timer?
+    
+    // 复活冷却时间，防止频繁调用 pluginkit
+    private var lastReviveTime: Date?
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         print("🚀 SwiftMenu: applicationDidFinishLaunching")
@@ -37,139 +40,72 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ProcessInfo.processInfo.disableSuddenTermination()
     }
     
-    // 进程监听源
-    private var processSource: DispatchSourceProcess?
-    
-    /// 启动 Extension 健康监控 (实时响应版)
+    /// 启动 Extension 健康监控 (心跳监测版)
     private func startExtensionHealthMonitor() {
-        // 1. 立即尝试建立实时监听
-        setupProcessMonitor()
-        
-        // 2. 保留一个低频轮询作为双保险（比如每30秒），防止监听失效或初次启动未找到进程
-        extensionHealthTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
-            self?.ensureExtensionAlive()
+        // 每 5 秒检查一次心跳 (提高响应速度)
+        extensionHealthTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
+            self?.checkExtensionHeartbeat()
         }
+        
+        // 立即检查一次
+        checkExtensionHeartbeat()
     }
     
-    /// 设置进程监听（Unix Signal 级别，毫秒级响应）
-    private func setupProcessMonitor() {
-        // 取消旧的监听
-        processSource?.cancel()
-        processSource = nil
+    /// 检查心跳文件
+    private func checkExtensionHeartbeat() {
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.aporightmenu") else { return }
+        let heartbeatFile = containerURL.appendingPathComponent("heartbeat")
         
-        // 获取进程 PID
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        task.arguments = ["-x", "SwiftMenuFinderSync"]
-        
-        let pipe = Pipe()
-        task.standardOutput = pipe
+        var isAlive = false
         
         do {
-            try task.run()
-            task.waitUntilExit()
-            
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            
-            // pgrep 可能返回多行 PID（多个实例），我们只取第一个有效的
-            let pids = output.split(separator: "\n").compactMap { Int32($0.trimmingCharacters(in: .whitespaces)) }
-            
-            if let pid = pids.first {
-                print("✅ Watchdog: 发现 \(pids.count) 个实例，锁定主 PID=[\(pid)] 开始监听...")
-                
-                // 创建进程监听源
-                let source = DispatchSource.makeProcessSource(identifier: pid_t(pid), eventMask: .exit, queue: .main)
-                
-                source.setEventHandler { [weak self] in
-                    print("⚠️ Watchdog: 收到进程退出信号 (PID \(pid))")
-                    
-                    // 进程退出了，无论如何都尝试复活一下，以防万一
-                    self?.reviveExtension()
-                    
-                    // 延迟后重新建立监听
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                        self?.setupProcessMonitor()
-                    }
-                }
-                
-                source.resume()
-                self.processSource = source
-            } else {
-                // pgrep 没报错但也没返回有效 PID
-                print("⚠️ Watchdog: 未找到有效 PID，尝试复活...")
-                reviveExtension()
-                
-                // 稍后重试
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                    if self?.processSource == nil {
-                        self?.setupProcessMonitor()
-                    }
+            let attributes = try FileManager.default.attributesOfItem(atPath: heartbeatFile.path)
+            if let modificationDate = attributes[.modificationDate] as? Date {
+                // 如果心跳在 10 秒内更新过，认为存活 (3秒心跳 + 缓冲)
+                // 这样用户哪怕遇到 Crash，最慢 10 秒内也会尝试自动重启
+                if Date().timeIntervalSince(modificationDate) < 10 {
+                    isAlive = true
+                } else {
+                    print("⚠️ Watchdog: 心跳超时 (\(Date().timeIntervalSince(modificationDate))s ago)")
                 }
             }
         } catch {
-            // pgrep 执行出错（通常意味着没找到进程，返回非0状态码）
-            print("⚠️ Watchdog: 未检测到进程，正在复活...")
-            reviveExtension()
-            
-            // 稍后重试
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                if self?.processSource == nil {
-                    self?.setupProcessMonitor()
-                }
-            }
+            print("⚠️ Watchdog: 无法读取心跳文件 (可能是首次启动)")
         }
-    }
-    
-    /// 确保扩展存活（轮询用）
-    private func ensureExtensionAlive() {
-        // 如果没有建立监听，说明可能挂了
-        if processSource == nil || processSource?.isCancelled == true {
-             // 检查进程是否存在，不存在则复活
-            checkAndRevive()
-        }
-    }
-    
-    private func checkAndRevive() {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        task.arguments = ["-x", "SwiftMenuFinderSync"]
-        try? task.run()
-        task.waitUntilExit()
         
-        if task.terminationStatus != 0 {
-            print("🕒 Watchdog (轮询): 发现扩展未运行，正在复活...")
+        if !isAlive {
             reviveExtension()
-            // 复活后稍等片刻建立监听
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                self?.setupProcessMonitor()
-            }
         }
     }
     
-    /// 复活扩展：强力重启模式
+    /// 复活扩展：通过插件系统重置
     private func reviveExtension() {
-        let extensionID = "com.aporightmenu.SwiftMenu.finder"
+        // 简单的冷却机制，避免短时间内连续调用耗费 CPU
+        if let last = lastReviveTime, Date().timeIntervalSince(last) < 10 {
+            return
+        }
+        lastReviveTime = Date()
         
-        // 1. 先尝试让系统 "发现" 它 (query)
-        let queryTask = Process()
-        queryTask.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
-        queryTask.arguments = ["-m", "-p", "com.apple.FinderSync", "-i", extensionID]
-        try? queryTask.run()
-        queryTask.waitUntilExit()
-        
-        // 2. 强制启用 (use)
-        // 注意：有些时候系统需要你先 ignore 再 use 才能触发重启，
-        // 但太频繁的 ignore 可能会导致配置丢失。
-        // 最稳妥的方法是反复发送 use 指令
-        
-        let enableTask = Process()
-        enableTask.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
-        enableTask.arguments = ["-e", "use", "-i", extensionID]
-        try? enableTask.run()
-        enableTask.waitUntilExit()
-        
-        print("🔄 Watchdog: 已发送复活指令 (Force Enable)")
+        DispatchQueue.global(qos: .userInitiated).async {
+            print("🔄 Watchdog: 尝试复活扩展...")
+            let extensionID = "com.aporightmenu.SwiftMenu.finder"
+            
+            // 1. 先尝试让系统 "发现" 它 (query)
+            let queryTask = Process()
+            queryTask.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+            queryTask.arguments = ["-m", "-p", "com.apple.FinderSync", "-i", extensionID]
+            try? queryTask.run()
+            queryTask.waitUntilExit()
+            
+            // 2. 强制启用 (use)
+            let enableTask = Process()
+            enableTask.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+            enableTask.arguments = ["-e", "use", "-i", extensionID]
+            try? enableTask.run()
+            enableTask.waitUntilExit()
+            
+            print("✅ Watchdog: 复活指令已发送")
+        }
     }
 
     private func setupStatusBar() {

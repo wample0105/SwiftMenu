@@ -24,6 +24,9 @@ class FinderSync: FIFinderSync {
         // 监听配置变化通知（避免轮询 Defaults）
         NotificationCenter.default.addObserver(self, selector: #selector(settingsChanged), name: UserDefaults.didChangeNotification, object: nil)
         
+        // 启动心跳
+        startHeartbeat()
+        
         NSLog("✅ FinderSync: Lightweight init complete, monitoring: \(homeURL.path)")
     }
     
@@ -32,11 +35,39 @@ class FinderSync: FIFinderSync {
         // 可以在这里重新加载缓存的配置值
     }
     
+    // MARK: - Heartbeat Mechanism
+    // 定期更新心跳文件，让主程序知道我们还活着，避免使用高开销的 pgrep
+    private var heartbeatTimer: Timer?
+    
+    private func startHeartbeat() {
+        // 立即写入一次
+        updateHeartbeat()
+        
+        // 每 3 秒更新一次 (提高频率以加快检测速度)
+        heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+            self?.updateHeartbeat()
+        }
+    }
+    
+    private func updateHeartbeat() {
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.aporightmenu") else { return }
+        let heartbeatFile = containerURL.appendingPathComponent("heartbeat")
+        
+        // 写入当前时间戳 (只需 touch 即可，内容不重要)
+        let timestamp = "\(Date().timeIntervalSince1970)"
+        do {
+            try timestamp.write(to: heartbeatFile, atomically: true, encoding: .utf8)
+        } catch {
+            NSLog("Heartsbeat write failed: \(error)")
+        }
+    }
+    
     // 移除所有 KeepAlive/Watchdog 代码
     // 只有做得足够轻，系统才不会杀你
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        heartbeatTimer?.invalidate()
     }
     class DebugLogger {
         static func log(_ message: String) {
