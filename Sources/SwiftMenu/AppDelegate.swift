@@ -70,45 +70,63 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             task.waitUntilExit()
             
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            if let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-               let pid = Int32(output) {
-                
-                print("✅ Watchdog: 锁定目标进程 PID=[\(pid)]，开始监听...")
+            let output = String(data: data, encoding: .utf8) ?? ""
+            
+            // pgrep 可能返回多行 PID（多个实例），我们只取第一个有效的
+            let pids = output.split(separator: "\n").compactMap { Int32($0.trimmingCharacters(in: .whitespaces)) }
+            
+            if let pid = pids.first {
+                print("✅ Watchdog: 发现 \(pids.count) 个实例，锁定主 PID=[\(pid)] 开始监听...")
                 
                 // 创建进程监听源
                 let source = DispatchSource.makeProcessSource(identifier: pid_t(pid), eventMask: .exit, queue: .main)
                 
                 source.setEventHandler { [weak self] in
-                    print("⚠️ Watchdog: 收到进程退出信号 (PID \(pid))，立即复活！")
+                    print("⚠️ Watchdog: 收到进程退出信号 (PID \(pid))")
+                    
+                    // 进程退出了，无论如何都尝试复活一下，以防万一
                     self?.reviveExtension()
                     
-                    // 进程已死，监听失效，需要稍后重新建立对新进程的监听
-                    // 延迟 2 秒等待新进程启动
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    // 延迟后重新建立监听
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         self?.setupProcessMonitor()
                     }
                 }
                 
                 source.resume()
                 self.processSource = source
+            } else {
+                // pgrep 没报错但也没返回有效 PID
+                print("⚠️ Watchdog: 未找到有效 PID，尝试复活...")
+                reviveExtension()
+                
+                // 稍后重试
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                    if self?.processSource == nil {
+                        self?.setupProcessMonitor()
+                    }
+                }
             }
         } catch {
-            // 暂时找不到进程，可能还没启动，交给轮询器稍后处理
+            // pgrep 执行出错（通常意味着没找到进程，返回非0状态码）
+            print("⚠️ Watchdog: 未检测到进程，正在复活...")
+            reviveExtension()
+            
+            // 稍后重试
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                if self?.processSource == nil {
+                    self?.setupProcessMonitor()
+                }
+            }
         }
     }
     
     /// 确保扩展存活（轮询用）
     private func ensureExtensionAlive() {
-        // 如果当前正在监听中，通常不需要通过轮询来复活，
-        // 除非监听失效了或者进程刚死还没来得及重启
+        // 如果没有建立监听，说明可能挂了
         if processSource == nil || processSource?.isCancelled == true {
              // 检查进程是否存在，不存在则复活
             checkAndRevive()
-        }
-        
-        // 始终尝试重新挂载监听（如果之前失败了）
-        if processSource == nil {
-            setupProcessMonitor()
         }
     }
     
@@ -129,14 +147,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    /// 复活扩展
+    /// 复活扩展：强力重启模式
     private func reviveExtension() {
         let extensionID = "com.aporightmenu.SwiftMenu.finder"
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
-        task.arguments = ["-e", "use", "-i", extensionID]
-        try? task.run()
-        task.waitUntilExit()
+        
+        // 1. 先尝试让系统 "发现" 它 (query)
+        let queryTask = Process()
+        queryTask.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+        queryTask.arguments = ["-m", "-p", "com.apple.FinderSync", "-i", extensionID]
+        try? queryTask.run()
+        queryTask.waitUntilExit()
+        
+        // 2. 强制启用 (use)
+        // 注意：有些时候系统需要你先 ignore 再 use 才能触发重启，
+        // 但太频繁的 ignore 可能会导致配置丢失。
+        // 最稳妥的方法是反复发送 use 指令
+        
+        let enableTask = Process()
+        enableTask.executableURL = URL(fileURLWithPath: "/usr/bin/pluginkit")
+        enableTask.arguments = ["-e", "use", "-i", extensionID]
+        try? enableTask.run()
+        enableTask.waitUntilExit()
+        
+        print("🔄 Watchdog: 已发送复活指令 (Force Enable)")
     }
 
     private func setupStatusBar() {

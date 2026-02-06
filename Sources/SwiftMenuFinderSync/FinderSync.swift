@@ -3,67 +3,40 @@ import FinderSync
 
 class FinderSync: FIFinderSync {
 
-    var myFolderURL: URL = {
-        let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
-        return URL(fileURLWithPath: paths.first!)
-    }()
+    // 缓存配置，避免每次菜单弹出由于 IO 读取导致卡顿
+    // 这是大厂保持菜单流畅的关键
+    private let settings = AppSettings.shared
     
-    // 用于保持扩展活跃的 activity token
-    private var activityToken: NSObjectProtocol?
-
     override init() {
         super.init()
         
-        // 始终启用扩展，监控用户主目录和外部卷
-        setupDirectoryMonitoring()
-        
-        // 🔥 关键：禁用自动终止，保持扩展常驻
-        setupKeepAlive()
-    }
-    
-    /// 设置保持活跃机制，防止系统自动终止扩展
-    private func setupKeepAlive() {
-        // 1. 禁用自动终止（最关键的一步）
-        ProcessInfo.processInfo.disableAutomaticTermination("SwiftMenu Finder Extension Active")
-        
-        // 2. 开始一个后台活动，告诉系统这个进程需要保持运行
-        activityToken = ProcessInfo.processInfo.beginActivity(
-            options: [.background, .idleSystemSleepDisabled],
-            reason: "SwiftMenu Finder Extension - Monitoring directories"
-        )
-        
-        // 3. 禁止突然终止
-        ProcessInfo.processInfo.disableSuddenTermination()
-        
-        print("✅ FinderSync: 已启用保持活跃机制")
-    }
-    
-    deinit {
-        // 清理：结束活动并恢复自动终止
-        if let token = activityToken {
-            ProcessInfo.processInfo.endActivity(token)
-        }
-        ProcessInfo.processInfo.enableAutomaticTermination("SwiftMenu Finder Extension Active")
-        ProcessInfo.processInfo.enableSuddenTermination()
-    }
-    
-    private func setupDirectoryMonitoring() {
-        let finderSync = FIFinderSyncController.default()
-        
-        var urls = Set<URL>()
-        
-        // 获取真实的用户主目录
+        // 仅监控用户主目录（最轻量级监控）
+        // ⚠️ 必须使用 getpwuid 获取真实 Home 目录，不能用 FileManager (它返回的是沙盒路径)
         var realHomeDir = NSHomeDirectory()
         if let pw = getpwuid(getuid()) {
-            realHomeDir = String(cString: pw.pointee.pw_dir)
+            if let homeDir = pw.pointee.pw_dir {
+                realHomeDir = String(cString: homeDir)
+            }
         }
-        let home = URL(fileURLWithPath: realHomeDir)
+        let homeURL = URL(fileURLWithPath: realHomeDir)
+        FIFinderSyncController.default().directoryURLs = [homeURL]
         
-        urls.insert(home)
-        urls.insert(URL(fileURLWithPath: "/Volumes"))
+        // 监听配置变化通知（避免轮询 Defaults）
+        NotificationCenter.default.addObserver(self, selector: #selector(settingsChanged), name: UserDefaults.didChangeNotification, object: nil)
         
-        finderSync.directoryURLs = urls
-        print("✅ FinderSync: 扩展已启用，监控目录：\(urls)")
+        NSLog("✅ FinderSync: Lightweight init complete, monitoring: \(homeURL.path)")
+    }
+    
+    @objc func settingsChanged() {
+        // 配置变了才刷新，否则完全静默
+        // 可以在这里重新加载缓存的配置值
+    }
+    
+    // 移除所有 KeepAlive/Watchdog 代码
+    // 只有做得足够轻，系统才不会杀你
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     class DebugLogger {
         static func log(_ message: String) {
@@ -96,26 +69,39 @@ class FinderSync: FIFinderSync {
     }
 
     override func menu(for menuKind: FIMenuKind) -> NSMenu {
-        // 创建菜单
+        // 创建菜单 (使用 lazy var 或缓存会更好，但 NSMenu 比较轻量，暂时保持)
         let menu = NSMenu(title: "")
         
-        // 检查设置（需要先修复 Target Membership）
+        // 检查设置
         let settings = AppSettings.shared
         
-        // 获取当前选中的文件
+        // 1. 快速检查：如果不在 Item 或 Container 上，直接返回空，避免后续计算
+        if menuKind != .contextualMenuForContainer && menuKind != .contextualMenuForItems {
+            return menu
+        }
+        
+        // 2. 获取选中项 (这是一个相对轻量的 Finder Sync API)
         let selectedItems = FIFinderSyncController.default().selectedItemURLs() ?? []
         let hasSelectedFiles = !selectedItems.isEmpty
         
-        // 检查剪贴板是否有文件
-        let pasteboard = NSPasteboard.general
-        let clipboardHasFiles = pasteboard.readObjects(forClasses: [NSURL.self], options: nil)?.isEmpty == false
+        // 3. 优化剪贴板读取：只在用户启用了粘贴功能时才读取，且只读取类型
+        var clipboardHasFiles = false
+        if settings.enablePaste {
+            // 使用 types 预检查，比 readObjects 更快
+            if let types = NSPasteboard.general.types, types.contains(.fileURL) {
+                clipboardHasFiles = true
+            }
+        }
         
-        // 如果是在文件上右键
-        if menuKind == .contextualMenuForContainer || menuKind == .contextualMenuForItems {
-            
-            // 根据用户自定义顺序添加菜单项
-            for key in settings.menuOrder {
-                switch key {
+
+        // 🔥 关键修复：直接从 UserDefaults 读取菜单顺序，而不是使用 AppSettings 的缓存
+        // 因为 AppSettings 是单例，在多进程环境下（主App修改，Extension读取）存储属性不会自动更新
+        let userDefaults = UserDefaults(suiteName: "group.com.aporightmenu")
+        let menuOrder = userDefaults?.array(forKey: "menuOrder") as? [String] ?? ["newFile", "copy", "cut", "paste", "copyPath", "openInTerminal"]
+        
+        // 根据顺序添加菜单项
+        for key in menuOrder {
+            switch key {
                 case "newFile":
                     // 新建文件子菜单
                     let newFileMenu = NSMenu(title: "新建文件")
@@ -211,8 +197,8 @@ class FinderSync: FIFinderSync {
                 }
             }
             
+            
             // 移到废纸篓功能已移除（原生菜单已提供）
-        }
         
         return menu
     }
