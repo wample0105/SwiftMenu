@@ -24,6 +24,7 @@
 ### 📦 生产交付
 - Release 启用优化、Dead Code Stripping、Hardened Runtime 和产品验证。
 - 发布流程升级为 Archive、Developer ID 导出、嵌入扩展与 entitlement 验证、DMG 公证、staple，并对 DMG 内最终 App 执行 Gatekeeper 验收。
+- README 增加未公证测试版的 Gatekeeper 单应用放行说明、终端备选命令和安全警告，并更新当前与旧版 macOS 的 Finder 扩展启用路径。
 
 ### 🎨 品牌视觉
 - 正式采用“光标 + 菜单 + 闪光”的方案 3 Logo，使用无渐变、无阴影的纯色扁平风格。

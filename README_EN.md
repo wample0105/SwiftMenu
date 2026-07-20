@@ -62,14 +62,34 @@ Before installing SwiftMenu, please ensure your device meets the following requi
 
 Production packages use Developer ID signing, Hardened Runtime, and Apple notarization so macOS Gatekeeper can validate them normally.
 
+If a download is explicitly marked **Not Notarized** or **Testing Only**, follow the steps below only after verifying the source and checksum. Create an exception for SwiftMenu alone—do not disable Gatekeeper system-wide.
+
 ### 1. Download & Install
 1. Go to [Releases](https://github.com/wample0105/SwiftMenu/releases) and download the latest `SwiftMenu_<version>.dmg`.
 2. Open the DMG and drag `SwiftMenu.app` into your **Applications** folder.
 3. Open SwiftMenu normally and configure the menu.
 
-### 2. Enable Finder Extension
-1. Open **System Settings** → **Privacy & Security** → **Extensions**.
-2. Click **Finder Extensions** and check ✅ **SwiftMenu**.
+### 2. First Launch of an Unnotarized Test Build
+
+1. Try opening `/Applications/SwiftMenu.app` once. Dismiss the warning if macOS says the developer cannot be verified or Apple cannot check the app for malicious software.
+2. Open **System Settings** → **Privacy & Security**, then scroll down to **Security**.
+3. Find the SwiftMenu warning, click **Open Anyway**, enter your login password, and confirm **Open**. The button is normally available for about one hour after the failed launch attempt.
+4. macOS saves this SwiftMenu build as an individual exception, so future launches work normally.
+
+See Apple’s official guide: [Open an app by overriding security settings](https://support.apple.com/en-euro/guide/mac-help/mh40617/mac).
+
+Experienced Terminal users can remove the quarantine attribute from SwiftMenu only:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/SwiftMenu.app"
+open "/Applications/SwiftMenu.app"
+```
+
+> ⚠️ Do this only after confirming the file came from the project’s official Release and was not modified. Do not use `sudo spctl --master-disable` to disable Gatekeeper globally. Stop if macOS explicitly reports malware, a damaged file, or an organization-managed policy.
+
+### 3. Enable Finder Extension
+1. Open **System Settings** → **General** → **Login Items & Extensions**.
+2. Manage **Finder Extensions** in the Extensions section and enable ✅ **SwiftMenu**. On older macOS versions, use **System Preferences → Extensions → Finder Extensions**.
 3. If the menu doesn't appear immediately, Right-click the Finder icon on the Dock and select "Relaunch", or execute `killall Finder` in Terminal.
 
 ## 📝 How to Use

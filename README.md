@@ -62,14 +62,34 @@
 
 正式发布包使用 Developer ID 签名、Hardened Runtime 和 Apple 公证，可由 macOS Gatekeeper 正常验证。
 
+如果下载的是明确标注“未公证”或“仅供测试”的版本，请只在确认下载来源和文件校验值可信后，按照下方步骤对 SwiftMenu 单独放行；不要关闭整台 Mac 的 Gatekeeper。
+
 ### 1. 下载与安装
 1. 前往 [Releases](https://github.com/wample0105/SwiftMenu/releases) 下载最新的 `SwiftMenu_<版本号>.dmg`。
 2. 打开 DMG，将 `SwiftMenu.app` 拖入 **应用程序 (Applications)** 文件夹。
 3. 正常双击运行 SwiftMenu 并完成菜单设置。
 
-### 2. 启用 Finder 扩展
-1. 打开 **系统设置** → **隐私与安全性** → **扩展**。
-2. 点击 **Finder 扩展**，勾选 ✅ **SwiftMenu**。
+### 2. 未公证测试版首次打开
+
+1. 先双击一次 `/Applications/SwiftMenu.app`。如果 macOS 提示“无法验证开发者”或“Apple 无法检查是否包含恶意软件”，关闭提示。
+2. 打开 **系统设置** → **隐私与安全性**，向下滚动到 **安全性**。
+3. 找到 SwiftMenu 的拦截记录，点击 **仍要打开**，输入登录密码后再次确认 **打开**。该按钮通常只在尝试启动后约一小时内显示。
+4. 放行后，macOS 会把当前 SwiftMenu 保存为单应用例外，以后可以正常双击启动。
+
+Apple 官方说明：[打开来自未知开发者的 Mac App](https://support.apple.com/zh-cn/guide/mac-help/mh40616/mac)。
+
+熟悉终端的用户也可以只移除 SwiftMenu 自身的隔离标记：
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/SwiftMenu.app"
+open "/Applications/SwiftMenu.app"
+```
+
+> ⚠️ 只应在确认文件来自本项目官方 Release 且未被篡改时执行。不要使用 `sudo spctl --master-disable` 全局关闭 Gatekeeper。如果系统明确报告恶意软件、文件已损坏或设备受组织策略管理，请停止操作并联系开发者或管理员。
+
+### 3. 启用 Finder 扩展
+1. 打开 **系统设置** → **通用** → **登录项与扩展**。
+2. 在扩展区域管理 **Finder 扩展**，开启 ✅ **SwiftMenu**。较早版本 macOS 可在“系统偏好设置 → 扩展 → Finder 扩展”中操作。
 3. 如果菜单没有立即显示，请右键点击 Dock 上的 Finder 图标并选择“重新启动”，或者在终端执行 `killall Finder`。
 
 ## 📝 使用方法
