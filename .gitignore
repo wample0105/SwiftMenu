@@ -6,13 +6,10 @@
 # Xcode
 build/
 DerivedData/
-*.
+dist/
 !default.pbxuser
-*.
 !default.mode1v3
-*.
 !default.mode2v3
-*.
 !default.perspectivev3
 xcuserdata/
 
@@ -23,7 +20,6 @@ xcuserdata/
 
 # Project settings
 *.moved-aside
-*.
 *.hmap
 *.ipa
 *.pkg

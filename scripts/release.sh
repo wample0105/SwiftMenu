@@ -1,83 +1,48 @@
 #!/bin/bash
 
-# SwiftMenu 自动化发版脚本
-# 作用：打包应用 -> 创建 Git Tag -> 创建 GitHub Release -> 上传安装包
+# 发布已签名且公证的 DMG 到 GitHub Releases。
 
-set -e
+set -euo pipefail
 
-# 0. 检查 gh 工具是否安装
-if ! command -v gh &> /dev/null; then
-    echo "❌ 错误：未安装 GitHub CLI (gh)"
-    echo "请运行 'brew install gh' 安装，并运行 'gh auth login' 登录"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+OUTPUT_DIR="$PROJECT_ROOT/dist"
+
+if ! command -v gh >/dev/null 2>&1; then
+    echo "❌ 未安装 GitHub CLI（gh）。"
     exit 1
 fi
 
-# 1. 获取版本号
-echo "📌 请输入要发布的版本号 (例如 v1.0.1):"
-read VERSION
-
-if [[ -z "$VERSION" ]]; then
-    echo "❌ 版本号不能为空"
+VERSION="$(sed -n 's/.*MARKETING_VERSION = \([^;]*\);/\1/p' "$PROJECT_ROOT/SwiftMenu.xcodeproj/project.pbxproj" | sort -u)"
+if [[ -z "$VERSION" ]] || [[ "$VERSION" == *$'\n'* ]]; then
+    echo "❌ 项目版本号不唯一，请先统一 MARKETING_VERSION。"
     exit 1
 fi
 
-if [[ ! "$VERSION" =~ ^v ]]; then
-    echo "⚠️  自动添加 'v' 前缀"
-    VERSION="v$VERSION"
+TAG="v$VERSION"
+DMG_PATH="$OUTPUT_DIR/SwiftMenu_${VERSION}.dmg"
+
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+    echo "❌ Git Tag $TAG 已存在，停止发布以避免覆盖历史版本。"
+    exit 1
 fi
 
-echo "🚀 开始发布流程：$VERSION"
-echo ""
+if [[ -n "$(git status --porcelain)" ]]; then
+    echo "❌ 工作区存在未提交修改，停止发布。"
+    exit 1
+fi
 
-# 2. 获取发布日志
-echo "📝 请输入发布日志 (输入完成后按 Ctrl+D 结束，直接按 Ctrl+D 使用默认日志):"
-RELEASE_NOTES=$(cat)
+"$PROJECT_ROOT/scripts/build_and_package.sh" "$OUTPUT_DIR"
 
+echo "📝 请输入发布说明，完成后按 Ctrl-D："
+RELEASE_NOTES="$(</dev/stdin)"
 if [[ -z "$RELEASE_NOTES" ]]; then
-    RELEASE_NOTES="SwiftMenu $VERSION 发布。包含安装包和完整压缩包。"
-    echo "💡 使用默认日志"
-fi
-echo ""
-
-# 3. 调用构建脚本进行打包
-echo "📦 正在构建应用..."
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-"$SCRIPT_DIR/build_and_package.sh"
-
-# 检查构建产物
-RELEASE_DIR=~/Desktop/SwiftMenu_Release
-DMG_FILE="$RELEASE_DIR/SwiftMenu_Installer.dmg"
-ZIP_FILE="$RELEASE_DIR/SwiftMenu_v1.0.zip" # 注意：这里如果版本号变了，zip名可能需要动态调整，目前脚本里是写死的v1.0
-
-# 临时重命名 ZIP 以匹配版本号 (可选)
-REAL_ZIP_FILE="$RELEASE_DIR/SwiftMenu_${VERSION}.zip"
-mv "$ZIP_FILE" "$REAL_ZIP_FILE"
-
-if [ ! -f "$DMG_FILE" ] || [ ! -f "$REAL_ZIP_FILE" ]; then
-    echo "❌ 错误：找不到构建产物"
-    exit 1
+    RELEASE_NOTES="SwiftMenu $TAG：轻量、按需运行的 Finder 右键增强工具。"
 fi
 
-# 4. 创建 Git Tag 并推送到远程
-echo "🏷️  创建 Git Tag: $VERSION"
-# 检查 tag 是否已存在
-if git rev-parse "$VERSION" >/dev/null 2>&1; then
-    echo "⚠️  Tag $VERSION 已存在，将覆盖 release..."
-else
-    git tag "$VERSION"
-    git push origin "$VERSION"
-fi
-
-# 5. 创建 GitHub Release 并上传文件
-echo "☁️  正在上传到 GitHub Release..."
-
-gh release create "$VERSION" \
-    "$DMG_FILE" \
-    "$REAL_ZIP_FILE" \
-    --title "SwiftMenu $VERSION" \
+gh release create "$TAG" "$DMG_PATH" \
+    --title "SwiftMenu $TAG" \
     --notes "$RELEASE_NOTES" \
+    --target "$(git rev-parse HEAD)" \
     --repo wample0105/SwiftMenu
 
-echo ""
-echo "✅ 发布完成！"
-echo "🔗 Release 链接：https://github.com/wample0105/SwiftMenu/releases/tag/$VERSION"
+echo "✅ $TAG 已发布。"

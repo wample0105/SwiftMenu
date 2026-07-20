@@ -29,7 +29,8 @@
   - **Copy Path**: Copy the full absolute path of selected files or folders to clipboard instantly.
   - **Open in Terminal**: Quickly open Terminal at the current directory.
 - **🎨 Native Visual Experience**: Seamlessly integrated with macOS UI using native SF Symbols.
-- **⚙️ Highly Customizable**: Toggle specific menu items via the main app and enable Launch at Login.
+- **⚙️ Highly Customizable**: Toggle and reorder menu items; the settings app exits when its window closes.
+- **🌿 On-Demand by Design**: macOS manages the Finder extension without polling, heartbeat files, or a keep-alive process.
 
 ## 📸 Screenshots
 
@@ -55,25 +56,16 @@ Before installing SwiftMenu, please ensure your device meets the following requi
 | **Operating System** | macOS 12.0 (Monterey) or later |
 | **Chip** | Apple Silicon (M1/M2/M3/M4) or Intel processor |
 
-> 💡 **Tip**: If you're running macOS Sequoia 15.x or later, SwiftMenu is fully compatible.
+> 💡 **Tip**: Before each production release, compatibility is validated on the minimum supported and current stable macOS versions using `Docs/PERFORMANCE_ACCEPTANCE.md`.
 
 ## 🚀 Installation Guide
 
-> ⚠️ **IMPORTANT: If "App cannot be opened"**
->
-> If you encounter a **"File is damaged"** or **"Cannot be opened"** error on first launch, this is standard macOS security behavior for open-source apps.
->
-> <img src="assets/notice.png" alt="App Cannot Open Error" width="400" />
->
-> **💡 The Solution (One-time only):**
-> 1. **Right-click** the SwiftMenu icon.
-> 2. Select **"Open"** from the context menu.
-> 3. Click **"Open"** again in the confirmation dialog.
+Production packages use Developer ID signing, Hardened Runtime, and Apple notarization so macOS Gatekeeper can validate them normally.
 
 ### 1. Download & Install
-1. Go to [Releases](https://github.com/wample0105/SwiftMenu/releases) and download the latest `SwiftMenu_Installer.dmg`.
+1. Go to [Releases](https://github.com/wample0105/SwiftMenu/releases) and download the latest `SwiftMenu_<version>.dmg`.
 2. Open the DMG and drag `SwiftMenu.app` into your **Applications** folder.
-3. **Critical:** For the first run, **Right-click** the app icon and choose "Open", then click "Open" again in the security prompt.
+3. Open SwiftMenu normally and configure the menu.
 
 ### 2. Enable Finder Extension
 1. Open **System Settings** → **Privacy & Security** → **Extensions**.
@@ -85,14 +77,18 @@ Before installing SwiftMenu, please ensure your device meets the following requi
 - **New File**: Right-click in a Finder blank space or on a folder, select "New..." and choose a file type.
 - **Copy Path**: Right-click on a file or folder and select "Copy Path".
 - **Open in Terminal**: Right-click on a folder or blank space and select "Open in Terminal".
-- **Customize Menu**: Open the SwiftMenu main app to toggle feature items in real-time.
+- **Customize Menu**: Open SwiftMenu to toggle and reorder items. Closing the window exits the settings app, so it does not remain resident.
 
 ## ❓ FAQ
 
 - **Q: Why doesn't the context menu show up?**
   - A: Please ensure "SwiftMenu" is checked in "System Settings" -> "Finder Extensions". If it's already checked but still missing, try relaunching Finder.
-- **Q: "SwiftMenu cannot be opened because Apple cannot check it for malicious software"?**
-  - A: This is a macOS security mechanism for unsigned apps. **Right-click** SwiftMenu in the Applications folder, select "Open", and confirm "Open" in the dialog.
+- **Q: Why is the SwiftMenu main app absent from Activity Monitor after I close it?**
+  - A: This is expected. The main app only edits settings and exits when closed; macOS loads the Finder extension on demand.
+- **Q: Why are there two SwiftMenu-related processes while Settings is open?**
+  - A: One is the settings app and the other is the separately hosted **SwiftMenu Finder Extension**. They are not duplicate launches. Closing the settings window exits the main app.
+- **Q: How do I stop the Finder extension completely?**
+  - A: Click **Manage Finder Extension…** in SwiftMenu’s General settings, then turn SwiftMenu off in System Settings. Quitting the settings app alone does not disable the context-menu extension.
 
 ## 🗑️ Uninstallation
 
@@ -100,11 +96,38 @@ Before installing SwiftMenu, please ensure your device meets the following requi
 2. Quit the SwiftMenu process.
 3. Move `SwiftMenu.app` from the Applications folder to the Trash.
 
+## ☕ Follow & Connect
+
+If SwiftMenu helps you, follow the project, join the community, or buy the author a coffee.
+
+<table align="center">
+  <tr>
+    <td align="center"><b>WeChat Official Account</b></td>
+    <td align="center"><b>Contact the Author</b></td>
+    <td align="center"><b>Support the Project</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="assets/cta/apo-rpa-qrcode.png" alt="Apo RPA WeChat official account QR code" width="180" /></td>
+    <td align="center"><img src="assets/cta/apo-wechat-qrcode.png" alt="Apo WeChat QR code" width="180" /></td>
+    <td align="center"><img src="assets/cta/apo-donate-qrcode.png" alt="Support the author QR code" width="180" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>阿坡RPA</b><br />Get SwiftMenu updates and useful tools</td>
+    <td align="center"><b>阿坡</b><br />Send “SwiftMenu” to join the community</td>
+    <td align="center"><b>Buy the author a coffee</b><br />Voluntary donations are appreciated</td>
+  </tr>
+</table>
+
+<p align="center">Open an image at full size, then save it with a long press or right-click.</p>
+
 ## 🛠 Development & Build
 
 1. Clone the repo: `git clone https://github.com/wample0105/SwiftMenu.git`
 2. Open `SwiftMenu.xcodeproj` in Xcode.
 3. Build and run the `SwiftMenu` scheme.
+4. Run `./scripts/run_tests.sh` for file-operation tests and macOS 12 compatibility type checking.
+
+Use `./scripts/build_and_package.sh` for production delivery. It runs tests, archives, exports with Developer ID, verifies signatures, creates the DMG, notarizes, staples the ticket, and performs a Gatekeeper assessment. Configure `NOTARYTOOL_PROFILE` first.
 
 ---
 <p align="center">
