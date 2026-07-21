@@ -14,6 +14,12 @@ enum SettingsTab: Hashable {
     case about
 }
 
+private enum SettingsWindowMetrics {
+    static let contentWidth: CGFloat = 500
+    static let contentHeight: CGFloat = 448
+    static let contentSize = NSSize(width: contentWidth, height: contentHeight)
+}
+
 private enum SettingsPageMetrics {
     static let horizontalPadding: CGFloat = 16
     static let topPadding: CGFloat = 20
@@ -32,6 +38,38 @@ private extension View {
                     height: proxy.size.height,
                     alignment: .topLeading
                 )
+        }
+    }
+}
+
+private struct SettingsWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        configureWindow(for: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        configureWindow(for: nsView)
+    }
+
+    private func configureWindow(for view: NSView) {
+        DispatchQueue.main.async {
+            guard let window = view.window else { return }
+            let targetSize = SettingsWindowMetrics.contentSize
+            let currentSize = window.contentLayoutRect.size
+            let requiresResize = abs(currentSize.width - targetSize.width) > 0.5
+                || abs(currentSize.height - targetSize.height) > 0.5
+
+            window.contentMinSize = targetSize
+            window.contentMaxSize = targetSize
+            window.styleMask.remove(.resizable)
+            window.standardWindowButton(.zoomButton)?.isEnabled = false
+
+            if requiresResize {
+                window.setContentSize(targetSize)
+                window.center()
+            }
         }
     }
 }
@@ -64,7 +102,11 @@ struct SettingsView: View {
                 .tag(SettingsTab.about)
         }
         .padding(20)
-        .frame(width: 500, height: 370)
+        .frame(
+            width: SettingsWindowMetrics.contentWidth,
+            height: SettingsWindowMetrics.contentHeight
+        )
+        .background(SettingsWindowConfigurator())
     }
 }
 
@@ -538,6 +580,7 @@ struct MenuOrderView: View {
             }
             .listStyle(.inset(alternatesRowBackgrounds: true))
             .cornerRadius(8)
+            .frame(height: 224)
             
             Text("提示：此顺序将即时应用到 Finder 右键菜单中。")
                 .font(.caption)
