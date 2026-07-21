@@ -14,6 +14,28 @@ enum SettingsTab: Hashable {
     case about
 }
 
+private enum SettingsPageMetrics {
+    static let horizontalPadding: CGFloat = 16
+    static let topPadding: CGFloat = 20
+    static let bottomPadding: CGFloat = 16
+}
+
+private extension View {
+    func settingsPageLayout() -> some View {
+        GeometryReader { proxy in
+            self
+                .padding(.horizontal, SettingsPageMetrics.horizontalPadding)
+                .padding(.top, SettingsPageMetrics.topPadding)
+                .padding(.bottom, SettingsPageMetrics.bottomPadding)
+                .frame(
+                    width: proxy.size.width,
+                    height: proxy.size.height,
+                    alignment: .topLeading
+                )
+        }
+    }
+}
+
 struct SettingsView: View {
     @State private var selectedTab: SettingsTab
 
@@ -120,7 +142,7 @@ struct AboutSettingsView: View {
 
             Spacer()
         }
-        .padding()
+        .settingsPageLayout()
         .onDisappear {
             closeTask?.cancel()
         }
@@ -314,7 +336,7 @@ struct GeneralSettingsView: View {
     @State private var showsExtensionSettingsError = false
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 16) {
             // 🏷️ 顶部品牌区域 (简化版)
             HStack(spacing: 12) {
                 if let appIcon = NSApp.applicationIconImage {
@@ -424,7 +446,7 @@ struct GeneralSettingsView: View {
             
             Spacer()
         }
-        .padding()
+        .settingsPageLayout()
         .alert("无法打开系统设置", isPresented: $showsExtensionSettingsError) {
             Button("好", role: .cancel) {}
         } message: {
@@ -488,7 +510,6 @@ struct MenuOrderView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("拖拽调整右键菜单顺序：")
                 .font(.headline)
-                .padding(.top)
             
             List {
                 ForEach(settings.menuOrder, id: \.self) { key in
@@ -522,7 +543,7 @@ struct MenuOrderView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
-        .padding()
+        .settingsPageLayout()
     }
     
     private func moveItem(from source: IndexSet, to destination: Int) {
